@@ -12,8 +12,8 @@ makeTrainMatrix [] cls = [[]]
 
 -- compute one of P(Gram=0|Spam) P(Gram=1|Spam) P(Gram=0|Ham) P(Gram=1|Ham) for each Gram in Corpus
 -- boolean parameters correspond to Gram = 0/1, Class = Spam/Ham
-computeCondProb :: Corpus -> Matrix -> Bool -> Bool -> [Double]
-computeCondProb [] m g s = []
+computeCondProb :: Matrix -> Bool -> Bool -> [Double]
+computeCondProb [] g s = []
 
 -- given a sentence, conditional probabilities for each word in Corpus and marginal probabilities
 -- for each class, classify sentence as "spam" or "ham"
