@@ -14,9 +14,14 @@ import Vectorizer
 buildProb :: FilePath -> [[Double]]
 buildProb fldr = []
 
+
 -- driver of the program
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
-classifyFile :: FilePath -> IO [String]
+
+-- temp signature used for debugging
+-- classifyFile :: FilePath -> IO [Sentence]
+
+classifyFile :: FilePath -> Bool
 classifyFile f = do
                         content <- listFldrContent "train"
                         dir <- getCurrentDirectory
@@ -24,14 +29,25 @@ classifyFile f = do
                         let dirTrainHam = dir ++ "/train/" ++ head (tail content) ++ "/"
                         spams <- getDirectoryContents dirTrainSpam 
                         hams <- getDirectoryContents dirTrainHam  
-                        --let allTexts = filter (`notElem` [".", ".."]) (spams ++ hams)
                         spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
                         hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
                         let allString = spamStrings ++ hamStrings 
+                        
+                        --------------------------------------------------------
                         -- build corpus from spam and ham
+                        
+                        -- can later change these to read from relevant files
+                        let dlims = ",.?!"
+                        let wordBlackList = ["a", "the", "he", "she", "it", "they", "i", "we"]
+                        
+                        let unsanitizedSentences = map (stringToSentence dlims) allString
                         -- build prob matrices
+
+                        let newMessage = readFile f
+                        -- vectorize newMessage
                         -- classify
-                        return allString
+                        
+                        return True
 
 -- check that subfolders spam/ham are in the target folder
 -- if at least one is missing then return an empty list
