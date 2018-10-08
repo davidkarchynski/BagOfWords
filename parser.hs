@@ -14,20 +14,19 @@ type Corpus = [Gram]
 
 -- split string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
-stringToSentence dlims [] = [[]]
---stringToSentence dlims str = ...
+stringToSentence dlims str = splitSep (flip elem dlims) str
 
-{-
--- example of similar function from asgn3
--- usage example: 
--- splitsep (`elem` " ,.?!") "What? is this thing? ... called Love."
-splitStringToWords :: (a -> Bool) -> [a] -> [[a]]
-splitStringToWords p [] = [[]]
-splitStringToWords p (h:t)  
-      | p h = []:rest
-      | otherwise = (h : head rest) : tail rest
-      where rest = splitsep p t
--}
+-- stringToSentence " ,.?!" "What? is this thing? ... called Love."
+--  should return ["What","","is","this","thing","","","","","","called","Love",""]
+
+--splitSep separates a list of elements into a list of list of elements by the given separator
+--splitSep function taken from assignment 3 solution.
+splitSep :: (a -> Bool) -> [a] -> [[a]]
+splitSep p [] = [[]]
+splitSep p (h:t)  
+    | p h = []:rest
+    | otherwise = (h : head rest) : tail rest
+        where rest = splitSep p t
 
 -- take output of splitStringToWords to produce a list of n-grams 
 wordsToNGrams :: Int -> Sentence -> Sentence
