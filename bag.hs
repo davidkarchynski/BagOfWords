@@ -21,7 +21,7 @@ buildProb fldr = []
 -- temp signature used for debugging
 -- classifyFile :: FilePath -> IO [Sentence]
 
-classifyFile :: FilePath -> Bool
+classifyFile :: FilePath -> IO Bool
 classifyFile f = do
                         content <- listFldrContent "train"
                         dir <- getCurrentDirectory
