@@ -17,7 +17,7 @@ stringToSentence :: [Char] -> String -> Sentence
 stringToSentence dlims str = splitSep (flip elem dlims) str
 
 -- stringToSentence " ,.?!" "What? is this thing? ... called Love."
---  should return ["What","","is","this","thing","","","","","","called","Love",""]
+--      should return ["What","","is","this","thing","","","","","","called","Love",""]
 
 --splitSep separates a list of elements into a list of list of elements by the given separator
 --splitSep function taken from assignment 3 solution.
@@ -35,11 +35,15 @@ wordsToNGrams n [[]] = [[]]
 
 -- given wrds, a list of words, remove all the words from lst
 -- e.g., lst may include articles, prepositions, pronouns, etc.
-
 filterWords :: [Gram] -> Sentence -> Sentence
-filterWords [] wrds = wrds 
--- TODO: add implementation
--- filterWords wrds lst = ...
+filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
+
+-- filterWords ["This", "is", "a"] ["This", "is", "a", "test", "sentence"]
+--      should return ["test","sentence"]
+-- filterWords [] ["This", "is", "a", "test", "sentence"]
+--      should return ["This","is","a","test","sentence"]
+-- filterWords ["This", "is", "a"] []
+--      should return []
 
 -- convert all words to lower-case stems, i.e. strip suffixes -ing, -ed, -s
 sanitizeWords :: [[Char]] -> Sentence -> Sentence
