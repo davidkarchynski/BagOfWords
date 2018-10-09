@@ -1,4 +1,13 @@
-module Parser where
+module Parser 
+    (Gram,              -- n-gram (word/stem, bigram etc.
+     Sentence,          -- list of words
+     Corpus,            -- list of words
+     stringToSentence,  -- [Char] -> String -> Sentence
+     wordsToNGrams,     -- Int -> Sentence -> Sentence
+     filterWords,       -- [Gram] -> Sentence -> Sentence
+     sanitizeWords      -- [[Char]] -> Sentence -> Sentence
+    ) where
+
 import Data.Char
 import Data.List
 
@@ -31,7 +40,7 @@ splitSep p (h:t)
         where rest = splitSep p t
 
 -- TODO: implement wordsToNGrams
--- wordsToNGrams take output of splitStringToWords to produce a list of n-grams 
+-- wordsToNGrams take output of stringToSentence to produce a list of n-grams 
 wordsToNGrams :: Int -> Sentence -> Sentence
 wordsToNGrams n [[]] = [[]]
 -- wordsToNGrams dlims str = ...
