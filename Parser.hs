@@ -1,4 +1,6 @@
 module Parser where
+import Data.Char
+import Data.List
 
 {-
 Since we constantly deal with nested lists of Char, let's adopt some convention for readability:
@@ -12,7 +14,7 @@ type Gram = [Char]
 type Sentence = [Gram]
 type Corpus = [Gram]
 
--- split string into words using delimiters in dlims
+-- stringToSentence splits a string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
 stringToSentence dlims str = splitSep (flip elem dlims) str
 
@@ -28,12 +30,13 @@ splitSep p (h:t)
     | otherwise = (h : head rest) : tail rest
         where rest = splitSep p t
 
--- take output of splitStringToWords to produce a list of n-grams 
+-- TODO: implement wordsToNGrams
+-- wordsToNGrams take output of splitStringToWords to produce a list of n-grams 
 wordsToNGrams :: Int -> Sentence -> Sentence
 wordsToNGrams n [[]] = [[]]
 -- wordsToNGrams dlims str = ...
 
--- given wrds, a list of words, remove all the words from lst
+-- filterWords, given wrds, a list of words, removes all the words from lst
 -- e.g., lst may include articles, prepositions, pronouns, etc.
 filterWords :: [Gram] -> Sentence -> Sentence
 filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
@@ -45,7 +48,37 @@ filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
 -- filterWords ["This", "is", "a"] []
 --      should return []
 
--- convert all words to lower-case stems, i.e. strip suffixes -ing, -ed, -s
+
+-- sanitizeWords converts all words to lower-case stems, i.e. strip suffixes -ing, -ed, -s
 sanitizeWords :: [[Char]] -> Sentence -> Sentence
-sanitizeWords sfxs [] = []
+sanitizeWords sfxs wrds = 
+    map (\ gram -> stripApplicableSuffix sfxs (map toLower gram)) wrds
+--sanitizeWords sfxs [] = []
 -- sanitizeWords sfxs wrds = ...
+
+-- sanitizeWords ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
+--      should return ["look", "look", "look"]
+-- sanitizeWords ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
+--      should return ["look","apple","wonder"]
+
+
+-- stripApplicableSuffix strips the appropriate suffix (from given list of suffixes) from the given gram
+-- if no suffixes apply, returns gram input unchanged
+stripApplicableSuffix :: [[Char]] -> Gram -> Gram
+stripApplicableSuffix sfxs gram = foldr (\ sfx acc -> 
+    if (isSuffixOf sfx gram) then (stripSuffix sfx gram) else acc) gram sfxs
+
+-- stripSuffix strips the given suffix from the given gram
+-- if suffix does not apply, returns gram input unchanged
+stripSuffix :: [Char] -> Gram -> Gram
+stripSuffix sfx wrd = 
+    reverse (getRoot (stripPrefix rSfx rWrd) rWrd)
+    where
+        rSfx = reverse sfx
+        rWrd = reverse wrd
+    
+-- getRoot returns the root of the word if a suffix was stripped from it
+-- otherwise returns the word itself
+getRoot :: Maybe Gram -> Gram -> Gram
+getRoot Nothing wrd = wrd
+getRoot (Just strippedWrd) _ = strippedWrd
