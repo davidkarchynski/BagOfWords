@@ -26,7 +26,6 @@ type Corpus = [Gram]
 -- stringToSentence splits a string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
 stringToSentence dlims str = splitSep (flip elem dlims) str
-
 -- stringToSentence " ,.?!" "What? is this thing? ... called Love."
 --      should return ["What","","is","this","thing","","","","","","called","Love",""]
 
@@ -67,7 +66,6 @@ buildNGram n (h:t) = h ++ " " ++ (buildNGram (n-1) t)
 -- e.g., lst may include articles, prepositions, pronouns, etc.
 filterWords :: [Gram] -> Sentence -> Sentence
 filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
-
 -- filterWords ["This", "is", "a"] ["This", "is", "a", "test", "sentence"]
 --      should return ["test","sentence"]
 -- filterWords [] ["This", "is", "a", "test", "sentence"]
@@ -80,14 +78,14 @@ filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
 sanitizeWords :: [[Char]] -> Sentence -> Sentence
 sanitizeWords sfxs wrds = 
     map (\ gram -> stripApplicableSuffix sfxs (map toLower gram)) wrds
---sanitizeWords sfxs [] = []
--- sanitizeWords sfxs wrds = ...
-
 -- sanitizeWords ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
 --      should return ["look", "look", "look"]
 -- sanitizeWords ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
 --      should return ["look","apple","wonder"]
-
+-- sanitizeWords [] ["Looking", "apples", "Wondered"]
+--      should return ["looking","apples","wondered"]
+-- sanitizeWords ["ing", "s", "ed"] []
+--      should return []
 
 -- stripApplicableSuffix strips the appropriate suffix (from given list of suffixes) from the given gram
 -- if no suffixes apply, returns gram input unchanged
@@ -96,16 +94,6 @@ stripApplicableSuffix sfxs gram = foldr (\ sfx acc ->
     if (isSuffixOf sfx gram) then (stripSuffix sfx gram) else acc) gram sfxs
 
 -- stripSuffix strips the given suffix from the given gram
--- if suffix does not apply, returns gram input unchanged
 stripSuffix :: [Char] -> Gram -> Gram
-stripSuffix sfx wrd = 
-    reverse (getRoot (stripPrefix rSfx rWrd) rWrd)
-    where
-        rSfx = reverse sfx
-        rWrd = reverse wrd
-    
--- getRoot returns the root of the word if a suffix was stripped from it
--- otherwise returns the word itself
-getRoot :: Maybe Gram -> Gram -> Gram
-getRoot Nothing wrd = wrd
-getRoot (Just strippedWrd) _ = strippedWrd
+stripSuffix sfx wrd = take n wrd
+    where n = (length wrd) - (length sfx)
