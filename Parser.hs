@@ -2,7 +2,9 @@ module Parser
     (Gram,              -- n-gram (word/stem, bigram etc.
      Sentence,          -- list of words
      Corpus,            -- list of words
-     parseGrams         -- [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
+     stringToSentence,  -- [Char] -> String -> Sentence
+     wordsToNGrams,     -- Int -> Sentence -> Sentence
+     sanitizeWords      -- [[Char]] -> Sentence -> Sentence
     ) where
 
 import Data.Char
@@ -24,11 +26,6 @@ testSentence = stringToSentence " ,.?!" "What? is this thing? ... called Love."
 testSanitizedSentence = sanitizeWords ["this", "is", "a", ""] ["s", "ed"] testSentence
 parserEndToEndTest = wordsToNGrams 2 testSanitizedSentence
 -- parserEndToEndTest should return ["what thing", "thing call", "call love"]
--- putting intermediate steps together we should get the same as above:
-testParse = parseGrams ["this", "is", "a", ""] ["s", "ed"]  2 " ,.?!" "What? is this thing? ... called Love."
-
-parseGrams :: [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
-parseGrams wrds sfxs n dlims str = wordsToNGrams n $ sanitizeWords wrds sfxs $ stringToSentence dlims str
 
 -- stringToSentence splits a string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
