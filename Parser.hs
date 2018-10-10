@@ -39,11 +39,29 @@ splitSep p (h:t)
     | otherwise = (h : head rest) : tail rest
         where rest = splitSep p t
 
--- TODO: implement wordsToNGrams
 -- wordsToNGrams take output of stringToSentence to produce a list of n-grams 
+-- returns [] if sentence has fewer than n grams
 wordsToNGrams :: Int -> Sentence -> Sentence
-wordsToNGrams n [[]] = [[]]
--- wordsToNGrams dlims str = ...
+wordsToNGrams n [] = []
+wordsToNGrams n (h:t)
+    | n < (length (h:t)) = (buildNGram n (h:t)) : (wordsToNGrams n t)
+    | n == (length (h:t)) = [buildNGram n (h:t)]
+    | otherwise = []
+-- wordsToNGrams 2 ["rose", "red", "other", "name"]
+--      should return ["rose red ","red other ","other name "]
+-- wordsToNGrams 3 ["rose", "red", "other", "name"]
+--      should return ["rose red other","red other name"]
+-- wordsToNGrams 4 ["rose", "red", "other", "name"]
+--      should return ["rose red other name"]
+-- wordsToNGrams 2 ["rose", "red", "other", "name"]
+--      should return []
+
+-- buildNGram combines the first n grams in the given sentence and returns that as a single gram
+buildNGram :: Int -> Sentence -> Gram
+buildNGram 0 _ = []
+buildNGram _ [] = []
+buildNGram 1 (h:_) = h
+buildNGram n (h:t) = h ++ " " ++ (buildNGram (n-1) t)
 
 -- filterWords, given wrds, a list of words, removes all the words from lst
 -- e.g., lst may include articles, prepositions, pronouns, etc.
