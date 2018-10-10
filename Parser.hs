@@ -23,6 +23,12 @@ type Gram = [Char]
 type Sentence = [Gram]
 type Corpus = [Gram]
 
+testSentence = stringToSentence " ,.?!" "What? is this thing? ... called Love."
+testSanitizedSentence = sanitizeWords ["ing", "s", "ed"] testSentence
+testFilteredWords = filterWords ["this", "is", "a", ""] testSanitizedSentence
+parserEndToEndTest = wordsToNGrams 2 testFilteredWords
+-- parserEndToEndTest should return ["what thing", "thing call", "call love"]
+
 -- stringToSentence splits a string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
 stringToSentence dlims str = splitSep (flip elem dlims) str
