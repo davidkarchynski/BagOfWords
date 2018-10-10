@@ -4,7 +4,6 @@ module Parser
      Corpus,            -- list of words
      stringToSentence,  -- [Char] -> String -> Sentence
      wordsToNGrams,     -- Int -> Sentence -> Sentence
-     filterWords,       -- [Gram] -> Sentence -> Sentence
      sanitizeWords      -- [[Char]] -> Sentence -> Sentence
     ) where
 
@@ -24,9 +23,8 @@ type Sentence = [Gram]
 type Corpus = [Gram]
 
 testSentence = stringToSentence " ,.?!" "What? is this thing? ... called Love."
-testSanitizedSentence = sanitizeWords ["ing", "s", "ed"] testSentence
-testFilteredWords = filterWords ["this", "is", "a", ""] testSanitizedSentence
-parserEndToEndTest = wordsToNGrams 2 testFilteredWords
+testSanitizedSentence = sanitizeWords ["this", "is", "a", ""] ["s", "ed"] testSentence
+parserEndToEndTest = wordsToNGrams 2 testSanitizedSentence
 -- parserEndToEndTest should return ["what thing", "thing call", "call love"]
 
 -- stringToSentence splits a string into words using delimiters in dlims
@@ -80,17 +78,29 @@ filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
 --      should return []
 
 
--- sanitizeWords converts all words to lower-case stems, i.e. strip suffixes -ing, -ed, -s
-sanitizeWords :: [[Char]] -> Sentence -> Sentence
-sanitizeWords sfxs wrds = 
-    map (\ gram -> stripApplicableSuffix sfxs (map toLower gram)) wrds
--- sanitizeWords ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
+-- sanitizeWords filters ignoredWords, and converts remaining words to lower-case stems,
+--      i.e. strip suffixes -ing, -ed, -s
+sanitizeWords :: [Gram] -> [[Char]] -> Sentence -> Sentence
+sanitizeWords ignoredWords sfxs wrds = 
+    map (\ gram -> stripApplicableSuffix sfxs gram) filteredWrds
+    where
+        lowerWrds = map (\ gram -> map toLower gram) wrds
+        filteredWrds = filterWords ignoredWords lowerWrds
+-- sanitizeWords [] ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
 --      should return ["look", "look", "look"]
--- sanitizeWords ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
+-- sanitizeWords [] ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
 --      should return ["look","apple","wonder"]
--- sanitizeWords [] ["Looking", "apples", "Wondered"]
+-- sanitizeWords [] [] ["Looking", "apples", "Wondered"]
 --      should return ["looking","apples","wondered"]
--- sanitizeWords ["ing", "s", "ed"] []
+-- sanitizeWords [] ["ing", "s", "ed"] []
+--      should return []
+-- sanitizeWords ["look"] ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
+--      should return ["look", "look", "look"]
+-- sanitizeWords ["looking"] ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
+--      should return ["apple","wonder"]
+-- sanitizeWords ["apples"] [] ["Looking", "apples", "Wondered"]
+--      should return ["looking","wondered"]
+-- sanitizeWords ["test"] ["ing", "s", "ed"] []
 --      should return []
 
 -- stripApplicableSuffix strips the appropriate suffix (from given list of suffixes) from the given gram
