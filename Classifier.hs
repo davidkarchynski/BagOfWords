@@ -13,7 +13,7 @@ classifySentence :: Matrix -> Matrix -> Vector -> Bool
 classifySentence spamM hamM v = if (pSpam > pHam) then True else False
                                 where 
                                      condPSpam = map (fst) condPs           
-                                     margPSpam = (fromIntegral $ length spamM)/(fromIntegral ((length spamM) + (length hamM)))
+                                     margPSpam = (fromIntegral $ length spamM)/(fromIntegral $ (length spamM) + (length hamM))
                                      pSpam = (foldr(*) 1 condPSpam)*margPSpam
                                      
                                      condPHam = map (snd) condPs
