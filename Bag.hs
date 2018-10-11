@@ -33,7 +33,7 @@ classifyFile f n = do
                         -- build corpus from spam and ham
                         
                         -- can later change these to read from relevant files
-                        let dlims = "'\n';,.?!:-()[] " -- don't forget to include whitespaces
+                        let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
                         
                         let parsedSpams = map (parseGrams wordBlackList 1 dlims) spamStrings
