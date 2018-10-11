@@ -17,9 +17,10 @@ buildProb fldr = []
 
 -- driver of the program
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
+-- pick your n to split text into n-grams
 
-classifyFile :: FilePath -> IO Bool
-classifyFile f = do
+classifyFile :: FilePath -> Int -> IO Bool
+classifyFile f n = do
                         content <- listFldrContent "train"
                         dir <- getCurrentDirectory
                         let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
@@ -39,19 +40,14 @@ classifyFile f = do
                         let parsedSpams = map (parseGrams wordBlackList suffixes 1 dlims) spamStrings
                         let parsedHams = map (parseGrams wordBlackList suffixes 1 dlims) hamStrings                        
                         
-                        -- let corpus = createCorpus $ parsedSpams ++ parsedHams
-                        -- temp corpus
-                        let corpus = ["research", "internship", "project", "undergraduate",
-                                      "graduate", "student", "requirement", "eligibility",
-                                      "course", "application", "path", "target", "icloud",
-                                      "activity", "soft", "hard", "purchase", "mobile", "leader"]
+                        let corpus = createCorpus $ parsedSpams ++ parsedHams
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
                         
                         -- classify
                         newMessage <- readFile f
-                        let parsedNewMessage = parseGrams wordBlackList suffixes 1 dlims newMessage
+                        let parsedNewMessage = parseGrams wordBlackList suffixes n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
                         
