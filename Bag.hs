@@ -34,24 +34,23 @@ classifyFile f = do
                         -- can later change these to read from relevant files
                         let dlims = ";,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
-                        let suffixes = ["s", "ed", "ing", "\n"] -- don't forget to include "new line"
                         
-                        let parsedSpams = map (parseGrams wordBlackList suffixes 1 dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList suffixes 1 dlims) hamStrings                        
+                        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spamStrings
+                        let parsedHams = map (parseGrams wordBlackList 1 dlims) hamStrings                        
                         
                         -- let corpus = createCorpus $ parsedSpams ++ parsedHams
                         -- temp corpus
-                        let corpus = ["research", "internship", "project", "undergraduate",
-                                      "graduate", "student", "requirement", "eligibility",
-                                      "course", "application", "path", "target", "icloud",
-                                      "activity", "soft", "hard", "purchase", "mobile", "leader"]
+                        let corpus = ["research", "internship", "project", "undergradu",
+                                      "graduat", "student", "requir", "elig",
+                                      "cours", "applic", "path", "target", "icloud",
+                                      "activ", "soft", "hard", "purchas", "mobil", "leader"]
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
                         
                         -- classify
                         newMessage <- readFile f
-                        let parsedNewMessage = parseGrams wordBlackList suffixes 1 dlims newMessage
+                        let parsedNewMessage = parseGrams wordBlackList 1 dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
                         
