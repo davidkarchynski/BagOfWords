@@ -27,6 +27,8 @@ parserEndToEndTest = wordsToNGrams 2 testSanitizedSentence
 -- putting intermediate steps together we should get the same as above:
 testParse = parseGrams ["this", "is", "a", ""] ["s", "ed"]  2 " ,.?!" "What? is this thing? ... called Love."
 
+-- public interface to parse
+-- produce a sentence from string
 parseGrams :: [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
 parseGrams wrds sfxs n dlims str = wordsToNGrams n $ sanitizeWords wrds sfxs $ stringToSentence dlims str
 
