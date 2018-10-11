@@ -37,13 +37,13 @@ classifySentence spamM hamM v = if (pSpam > pHam) then True else False
 -- given a reference matrix mtrx and a target vector vctr
 -- returns a vector of with each entry i = the number of matches between vctr's i'th entry and mtrx's i'th entry in each of its row
 getAllCounts :: Matrix -> Vector -> [Int]
-getAllCounts mtrx vctr = foldl (\acc x -> acc ++ [countSameElement mtrx (length acc) x]) [] vctr
+getAllCounts mtrx vctr = map (\ (e, index) -> countSameElement mtrx index e) indexedVector
+    where indexedVector = zip vctr [0..]
 -- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [0, 0, 1] should give [1,2,3]
 -- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [1, 1, 1] should give [2,1,3]
 
 -- count occurences of element elmnt in column indx in the matrix mtrx
 countSameElement :: Matrix -> Int -> Int -> Int
-countSameElement mtrx indx elmnt = foldr (\v acc -> if (v !! indx == elmnt) then (acc + 1) else acc) 0 mtrx
-
+countSameElement mtrx indx elmnt = length (filter (\ v -> v !! indx == elmnt) mtrx)
 -- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 0 1 should give 2
 -- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 1 1 should give 1
