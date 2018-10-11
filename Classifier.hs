@@ -1,10 +1,8 @@
 module Classifier 
     (classifySentence
     ) where
-
-type Vector = [Int] 
-type Matrix = [Vector]  -- note that each vector is a row in the matrix
-
+    
+import CustomTypes
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
