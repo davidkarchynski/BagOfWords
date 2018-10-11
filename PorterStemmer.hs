@@ -146,7 +146,11 @@ allSteps = step5 . step4 . step3 . step2 . step1
 stem s | length s < 3 = s
        | otherwise    = allSteps s
        
-main :: IO ()
-main = do
-    content <- readFile "input.txt"
-    writeFile "output.txt" $ unlines $ map stem $ lines content
+-- uncomment main method below to test algorithm correctness
+-- using https://tartarus.org/martin/PorterStemmer/voc.txt as input.txt
+-- should generate output.txt that matches https://tartarus.org/martin/PorterStemmer/output.txt exactly
+
+-- main :: IO ()
+-- main = do
+    -- content <- readFile "input.txt"
+    -- writeFile "output.txt" $ unlines $ map stem $ lines content
