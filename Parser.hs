@@ -7,6 +7,7 @@ module Parser
 
 import Data.Char
 import Data.List
+import PorterStemmer
 
 {-
 Since we constantly deal with nested lists of Char, let's adopt some convention for readability:
@@ -21,16 +22,16 @@ type Sentence = [Gram]
 type Corpus = [Gram]
 
 testSentence = stringToSentence " ,.?!" "What? is this thing? ... called Love."
-testSanitizedSentence = sanitizeWords ["this", "is", "a", ""] ["s", "ed"] testSentence
+testSanitizedSentence = sanitizeWords ["this", "is", "a", ""] testSentence
 parserEndToEndTest = wordsToNGrams 2 testSanitizedSentence
 -- parserEndToEndTest should return ["what thing", "thing call", "call love"]
 -- putting intermediate steps together we should get the same as above:
-testParse = parseGrams ["this", "is", "a", ""] ["s", "ed"]  2 " ,.?!" "What? is this thing? ... called Love."
+testParse = parseGrams ["this", "is", "a", ""] 2 " ,.?!" "What? is this thing? ... called Love."
 
 -- public interface to parse
 -- produce a sentence from string
-parseGrams :: [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
-parseGrams wrds sfxs n dlims str = wordsToNGrams n $ sanitizeWords wrds sfxs $ stringToSentence dlims str
+parseGrams :: [Gram] -> Int -> [Char] -> String -> Sentence
+parseGrams wrds n dlims str = wordsToNGrams n $ sanitizeWords wrds $ stringToSentence dlims str
 
 -- stringToSentence splits a string into words using delimiters in dlims
 stringToSentence :: [Char] -> String -> Sentence
@@ -82,39 +83,25 @@ filterWords gramsToRemove wrds = filter (flip notElem gramsToRemove) wrds
 -- filterWords ["This", "is", "a"] []
 --      should return []
 
-
--- sanitizeWords filters ignoredWords, and converts remaining words to lower-case stems,
---      i.e. strip suffixes -ing, -ed, -s
-sanitizeWords :: [Gram] -> [[Char]] -> Sentence -> Sentence
-sanitizeWords ignoredWords sfxs wrds = 
-    map (\ gram -> stripApplicableSuffix sfxs gram) filteredWrds
+-- sanitizeWords filters ignoredWords, and converts remaining words to lower-case stems
+-- using the Porter Stemmer algorithm
+sanitizeWords :: [Gram] -> Sentence -> Sentence
+sanitizeWords ignoredWords wrds = 
+    stemWords filteredWrds
     where
         lowerWrds = map (\ gram -> map toLower gram) wrds
         filteredWrds = filterWords ignoredWords lowerWrds
--- sanitizeWords [] ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
+-- sanitizeWords [] ["Looking", "looks", "Looked"]
 --      should return ["look", "look", "look"]
--- sanitizeWords [] ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
---      should return ["look","apple","wonder"]
--- sanitizeWords [] [] ["Looking", "apples", "Wondered"]
---      should return ["looking","apples","wondered"]
--- sanitizeWords [] ["ing", "s", "ed"] []
+-- sanitizeWords [] ["Looking", "apples", "Wondered"]
+--      should return ["look","appl","wonder"]
+-- sanitizeWords [] []
 --      should return []
--- sanitizeWords ["look"] ["ing", "s", "ed"] ["Looking", "looks", "Looked"]
+-- sanitizeWords ["look"] ["Looking", "looks", "Looked"]
 --      should return ["look", "look", "look"]
--- sanitizeWords ["looking"] ["ing", "s", "ed"] ["Looking", "apples", "Wondered"]
---      should return ["apple","wonder"]
--- sanitizeWords ["apples"] [] ["Looking", "apples", "Wondered"]
+-- sanitizeWords ["looking"] ["Looking", "apples", "Wondered"]
+--      should return ["appl","wonder"]
+-- sanitizeWords ["apples"] ["Looking", "apples", "Wondered"]
 --      should return ["looking","wondered"]
--- sanitizeWords ["test"] ["ing", "s", "ed"] []
+-- sanitizeWords ["test"] []
 --      should return []
-
--- stripApplicableSuffix strips the appropriate suffix (from given list of suffixes) from the given gram
--- if no suffixes apply, returns gram input unchanged
-stripApplicableSuffix :: [[Char]] -> Gram -> Gram
-stripApplicableSuffix sfxs gram = foldr (\ sfx acc -> 
-    if (isSuffixOf sfx gram) then (stripSuffix sfx gram) else acc) gram sfxs
-
--- stripSuffix strips the given suffix from the given gram
-stripSuffix :: [Char] -> Gram -> Gram
-stripSuffix sfx wrd = take n wrd
-    where n = (length wrd) - (length sfx)

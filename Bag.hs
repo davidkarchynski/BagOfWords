@@ -35,10 +35,9 @@ classifyFile f n = do
                         -- can later change these to read from relevant files
                         let dlims = ";,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
-                        let suffixes = ["s", "ed", "ing", "\n"] -- don't forget to include "new line"
                         
-                        let parsedSpams = map (parseGrams wordBlackList suffixes 1 dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList suffixes 1 dlims) hamStrings                        
+                        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spamStrings
+                        let parsedHams = map (parseGrams wordBlackList 1 dlims) hamStrings                        
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
@@ -47,6 +46,7 @@ classifyFile f n = do
                         
                         -- classify
                         newMessage <- readFile f
+
                         let parsedNewMessage = parseGrams wordBlackList suffixes n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
