@@ -1,25 +1,11 @@
 module Parser 
-    (Gram,              -- n-gram (word/stem, bigram etc.
-     Sentence,          -- list of words
-     Corpus,            -- list of words
-     parseGrams         -- [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
+    (parseGrams         -- [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
     ) where
 
 import Data.Char
 import Data.List
 import PorterStemmer
-
-{-
-Since we constantly deal with nested lists of Char, let's adopt some convention for readability:
-[Char] refers to delimeters/suffixes
-[[Char]] refers to a list of delimeters/suffixes
-String refers to the initial unparsed text message
-Gram refers to n-gram (word/stem, bigram etc.)
--}
-
-type Gram = [Char]
-type Sentence = [Gram]
-type Corpus = [Gram]
+import CustomTypes
 
 testSentence = stringToSentence " ,.?!" "What? is this thing? ... called Love."
 testSanitizedSentence = sanitizeWords ["this", "is", "a", ""] testSentence
