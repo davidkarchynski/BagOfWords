@@ -1,21 +1,45 @@
-module Classifier where
+module Classifier 
+    (classifySentence
+    ) where
 
-import Parser
+type Vector = [Int] 
+type Matrix = [Vector]
 
--- need to explore built-in Matrix types, or fine tune custom type
-type Matrix= [[Int]]
 
--- create a matrix where each row is a vectorized sentence, plus last column being 
--- a classification vector (where 1 corresponds to "spam" and 0 to "ham")
-makeTrainMatrix :: [Sentence] -> [Int] -> Matrix
-makeTrainMatrix [] cls = [[]]
+-- there are 2 input matrices: one for each category (i.e., spam/ham)
+-- in each matrix each row is a vectorized sentence 
+-- input vector is vectorized sentence we want to classify
+classifySentence :: Matrix -> Matrix -> Vector -> Bool
+classifySentence spamM hamM v = if (pSpam > pHam) then True else False
+                                where 
+                                     condPSpam = map (\(x,y) -> let intX = fromIntegral x
+                                                                    intSum = fromIntegral (x + y) in
+                                                                intX/intSum) 
+                                                 (zip spamCount hamCount)
+                                     margPSpam = (fromIntegral $ length spamM)/(fromIntegral ((length spamM) + (length hamM)))
+                                     pSpam = (foldr(*) 1 condPSpam)*margPSpam
 
--- compute one of P(Gram=0|Spam) P(Gram=1|Spam) P(Gram=0|Ham) P(Gram=1|Ham) for each Gram in Corpus
--- boolean parameters correspond to Gram = 0/1, Class = Spam/Ham
-computeCondProb :: Matrix -> Bool -> Bool -> [Double]
-computeCondProb [] g s = []
+                                     condPHam = map (\(x,y) -> let intY = fromIntegral y
+                                                                   intSum = fromIntegral (x + y) in
+                                                                intY/intSum) 
+                                                 (zip spamCount hamCount)
+                                     margPHam = 1 - margPSpam
+                                     pHam = (foldr(*) 1 condPHam)*margPHam
+                                     spamCount = getAllCounts spamM v
+                                     hamCount = getAllCounts hamM v
+-- some basic tests
+-- classifySentence [[1, 0]] [[0, 1]] [1, 0] should be True
+-- classifySentence [[1, 0]] [[0, 1]] [0, 1] should be False
+-- classifySentence [[1, 0, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]] [[0, 1, 0, 0], [0, 0, 1, 1], [0, 0, 0, 1]] [1, 0, 0, 0] should be True
 
--- given a sentence, conditional probabilities for each word in Corpus and marginal probabilities
--- for each class, classify sentence as "spam" or "ham"
-classifySentence :: Sentence -> [[Double]] -> [Double] -> Bool
-classifySentence [] pw pc = False
+getAllCounts :: Matrix -> Vector -> [Int]
+getAllCounts mtrx vctr = foldl (\acc x -> acc ++ [countSameElement mtrx (length acc) x]) [] vctr
+-- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [0, 0, 1] should give [1,2,3]
+-- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [1, 1, 1] should give [2,1,3]
+
+-- count occurences of element elmnt in column indx in the matrix mtrx
+countSameElement :: Matrix -> Int -> Int -> Int
+countSameElement mtrx indx elmnt = foldr (\v acc -> if (v !! indx == elmnt) then (acc + 1) else acc) 0 mtrx
+
+-- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 0 1 should give 2
+-- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 1 1 should give 1

@@ -18,9 +18,6 @@ buildProb fldr = []
 -- driver of the program
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
 
--- temp signature used for debugging
--- classifyFile :: FilePath -> IO [Sentence]
-
 classifyFile :: FilePath -> IO Bool
 classifyFile f = do
                         content <- listFldrContent "train"
@@ -31,23 +28,34 @@ classifyFile f = do
                         hams <- getDirectoryContents dirTrainHam  
                         spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
                         hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
-                        let allString = spamStrings ++ hamStrings 
-                        
-                        --------------------------------------------------------
+           
                         -- build corpus from spam and ham
                         
                         -- can later change these to read from relevant files
-                        let dlims = ",.?!"
-                        let wordBlackList = ["a", "the", "he", "she", "it", "they", "i", "we"]
+                        let dlims = ";,.?!:-()[] " -- don't forget to include whitespaces
+                        let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
+                        let suffixes = ["s", "ed", "ing", "\n"] -- don't forget to include "new line"
                         
-                        let unsanitizedSentences = map (stringToSentence dlims) allString
-                        -- build prob matrices
+                        let parsedSpams = map (parseGrams wordBlackList suffixes 1 dlims) spamStrings
+                        let parsedHams = map (parseGrams wordBlackList suffixes 1 dlims) hamStrings                        
+                        
+                        -- let corpus = createCorpus $ parsedSpams ++ parsedHams
+                        -- temp corpus
+                        let corpus = ["research", "internship", "project", "undergraduate",
+                                      "graduate", "student", "requirement", "eligibility",
+                                      "course", "application", "path", "target", "icloud",
+                                      "activity", "soft", "hard", "purchase", "mobile", "leader"]
 
-                        let newMessage = readFile f
-                        -- vectorize newMessage
-                        -- classify
+                        let vectSpams = map (vectorizeSentence corpus) parsedSpams
+                        let vectHams = map (vectorizeSentence corpus) parsedHams
                         
-                        return True
+                        -- classify
+                        newMessage <- readFile f
+                        let parsedNewMessage = parseGrams wordBlackList suffixes 1 dlims newMessage
+                        let newMessageVect = vectorizeSentence corpus parsedNewMessage
+                        let isSpam = classifySentence vectSpams vectHams newMessageVect
+                        
+                        return isSpam
 
 -- check that subfolders spam/ham are in the target folder
 -- if at least one is missing then return an empty list
