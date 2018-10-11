@@ -3,12 +3,13 @@ module Classifier
     ) where
 
 type Vector = [Int] 
-type Matrix = [Vector]
+type Matrix = [Vector]  -- note that each vector is a row in the matrix
 
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
 -- input vector is vectorized sentence we want to classify
+-- returns true if sentence classified as spam and false otherwise
 classifySentence :: Matrix -> Matrix -> Vector -> Bool
 classifySentence spamM hamM v = if (pSpam > pHam) then True else False
                                 where 
@@ -33,6 +34,8 @@ classifySentence spamM hamM v = if (pSpam > pHam) then True else False
 -- classifySentence [[1, 0]] [[0, 1]] [0, 1] should be False
 -- classifySentence [[1, 0, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]] [[0, 1, 0, 0], [0, 0, 1, 1], [0, 0, 0, 1]] [1, 0, 0, 0] should be True
 
+-- given a reference matrix mtrx and a target vector vctr
+-- returns a vector of with each entry i = the number of matches between vctr's i'th entry and mtrx's i'th entry in each of its row
 getAllCounts :: Matrix -> Vector -> [Int]
 getAllCounts mtrx vctr = foldl (\acc x -> acc ++ [countSameElement mtrx (length acc) x]) [] vctr
 -- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [0, 0, 1] should give [1,2,3]
