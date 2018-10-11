@@ -47,7 +47,7 @@ classifyFile f n = do
                         -- classify
                         newMessage <- readFile f
 
-                        let parsedNewMessage = parseGrams wordBlackList suffixes n dlims newMessage
+                        let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
                         
