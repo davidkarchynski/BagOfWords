@@ -2,6 +2,7 @@ module Corpufier where
 
 import Parser
 import Data.List
+import CustomTypes
 
 -- pass a sanitized/filtered list of sentences to get a set of unique grams
 -- sorted alphabetically
