@@ -36,8 +36,8 @@ classifyFile f n = do
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
                         
-                        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList 1 dlims) hamStrings                        
+                        let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
+                        let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings                        
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
