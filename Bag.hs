@@ -36,10 +36,13 @@ classifyFile f n = do
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
                         
-                        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList 1 dlims) hamStrings                        
+                        let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
+                        let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings                        
                         
-                        let corpus = createCorpus $ parsedSpams ++ parsedHams
+                        let parsedGrams = parsedSpams ++ parsedHams
+                        let corpus = createCorpus parsedGrams
+
+                        let numOfDocs = length parsedGrams
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
@@ -48,6 +51,14 @@ classifyFile f n = do
                         newMessage <- readFile f
 
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
+
+                        -- test tf-idf (hardcoding number of docs for now)
+                        let occurenceMap = gramOccursMap $ numOfGramOccurs parsedGrams
+                        -- let freqVector = frequencyVector parsedNewMessage occurenceMap 6 "your"
+
+                        let freqVector = map (gramFrequency parsedNewMessage occurenceMap (fromIntegral numOfDocs)) parsedNewMessage
+                        putStr $ show freqVector
+
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
                         
