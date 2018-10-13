@@ -8,9 +8,10 @@ import Corpufier
 import Vectorizer
 import CustomTypes
 
-stratSelectPrompt = "Please select a classifying strategy (enter 1 or 2)."
-stratList = ["1. Naive Bayes", "2. Cosine Similarity"]
-stratMap = [("1", classifySentence), ("2", classifySentenceCosSim)]
+-- To run it, try:
+-- ghci
+-- :load Bag
+-- main
 
 main :: IO ()
 main =
@@ -23,12 +24,14 @@ main =
         let response = if (isSpam) then "This is spam" else "This is ham"
         putStrLn response
         return ()
-        
-selectStrat :: String -> Strategy
-selectStrat userInput = if (userInput == "1") 
-                        then classifySentence
-                        else classifySentenceCosSim
-                        
+         
+stratSelectPrompt = "Please select a classifying strategy (enter 1 or 2)."
+stratList = ["1. Naive Bayes", "2. Cosine Similarity"]
+stratMap = [("1", classifySentence), ("2", classifySentenceCosSim)]
+         
+-- given a prompt, list of options, and a map of options to return values
+-- asks user to choose an option and return the value corresponding to the option picked
+-- if user chooses an invalid option, will continue to prompt user until given a valid choice         
 choiceDriver :: String -> [String] -> [(String, a)] -> IO a
 choiceDriver prompt options optionMap =
     do
@@ -40,9 +43,12 @@ choiceDriver prompt options optionMap =
             then do choiceDriver prompt options optionMap
             else return (fromJust returnValMaybe)
         
+-- given a searchString and a list of tuples (key, value),
+-- returns Just value corresponding to the matching key if found
+-- Nothing otherwise
 getVal :: String -> [(String, a)] -> Maybe a
-getVal str [] = Nothing
-getVal str (h:t) = if (str == fst h)
+getVal searchString [] = Nothing
+getVal searchString (h:t) = if (str == fst h)
                    then Just (snd h)
                    else getVal str t
         
