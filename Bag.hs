@@ -1,11 +1,51 @@
 import System.Directory (getDirectoryContents, getCurrentDirectory)
+import System.IO
+import Data.Maybe
 import Parser
 import Classifier
 import ClassifierCosSim
 import Corpufier
 import Vectorizer
+import CustomTypes
 
+stratSelectPrompt = "Please select a classifying strategy (enter 1 or 2)."
+stratList = ["1. Naive Bayes", "2. Cosine Similarity"]
+stratMap = [("1", classifySentence), ("2", classifySentenceCosSim)]
 
+main :: IO ()
+main =
+    do
+        putStrLn "Starting Bag-Of-Words Spam/Ham Classifier program..."
+        strat <- choiceDriver stratSelectPrompt stratList stratMap
+        putStrLn "Please enter the name of the text file you would like to classify."
+        filePath <- getLine
+        isSpam <- classifyFile filePath 1 strat
+        let response = if (isSpam) then "This is spam" else "This is ham"
+        putStrLn response
+        return ()
+        
+selectStrat :: String -> Strategy
+selectStrat userInput = if (userInput == "1") 
+                        then classifySentence
+                        else classifySentenceCosSim
+                        
+choiceDriver :: String -> [String] -> [(String, a)] -> IO a
+choiceDriver prompt options optionMap =
+    do
+        putStrLn prompt
+        mapM_ putStrLn options
+        response <- getLine
+        let returnValMaybe = getVal response optionMap
+        if (isNothing returnValMaybe) 
+            then do choiceDriver prompt options optionMap
+            else return (fromJust returnValMaybe)
+        
+getVal :: String -> [(String, a)] -> Maybe a
+getVal str [] = Nothing
+getVal str (h:t) = if (str == fst h)
+                   then Just (snd h)
+                   else getVal str t
+        
 -- to train the model need to provide a path to folder with 2 subfolders
 -- one subfolder will contain "spam" texts, the second - "ham"
 
@@ -13,8 +53,8 @@ import Vectorizer
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
 -- pick your n to split text into n-grams
 
-classifyFile :: FilePath -> Int -> IO Bool
-classifyFile f n = do
+classifyFile :: FilePath -> Int -> Strategy -> IO Bool
+classifyFile f n classifyStrat = do
                         content <- listFldrContent "train"
                         dir <- getCurrentDirectory
                         let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
@@ -43,10 +83,11 @@ classifyFile f n = do
 
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
-                        let isSpam = classifySentence vectSpams vectHams newMessageVect
+                        let isSpam = classifyStrat vectSpams vectHams newMessageVect
                         
                         return isSpam
 
+                        
 -- check that subfolders spam/ham are in the target folder
 -- if at least one is missing then return an empty list
 -- otherwise return a list containing only 2 elements: spam/ham

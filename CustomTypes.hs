@@ -4,6 +4,7 @@ module CustomTypes
      Corpus,            -- list of words
      Vector,            -- list of Ints
      Matrix,            -- list of Vectors 
+     Strategy           -- (Matrix -> Matrix -> Vector -> Bool)
     ) where
     
 {-
@@ -19,3 +20,5 @@ type Corpus = [Gram]
 
 type Vector = [Int] 
 type Matrix = [Vector]  -- note that each vector is a row in the matrix
+
+type Strategy = (Matrix -> Matrix -> Vector -> Bool)
