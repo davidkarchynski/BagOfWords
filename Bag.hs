@@ -1,6 +1,7 @@
 import System.Directory (getDirectoryContents, getCurrentDirectory)
 import Parser
 import Classifier
+import ClassifierCosSim
 import Corpufier
 import Vectorizer
 
