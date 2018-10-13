@@ -3,6 +3,8 @@ import Parser
 import Classifier
 import Corpufier
 import Vectorizer
+import Data.List
+import Data.Ord (comparing)
 
 
 -- to train the model need to provide a path to folder with 2 subfolders
@@ -21,46 +23,31 @@ buildProb fldr = []
 
 classifyFile :: FilePath -> Int -> IO Bool
 classifyFile f n = do
-                        content <- listFldrContent "train"
-                        dir <- getCurrentDirectory
-                        let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
-                        let dirTrainHam = dir ++ "/train/" ++ head (tail content) ++ "/"
-                        spams <- getDirectoryContents dirTrainSpam 
-                        hams <- getDirectoryContents dirTrainHam  
-                        spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
-                        hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
-           
-                        -- build corpus from spam and ham
-                        
                         -- can later change these to read from relevant files
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
-                        
-                        let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings                        
-                        
-                        let parsedGrams = parsedSpams ++ parsedHams
-                        let corpus = createCorpus parsedGrams
 
-                        let numOfDocs = length parsedGrams
+                        file <- readFile "SMSSpamCollection"
+                        let values = sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+                        let groupedData = groupBy (\x y -> (head x) == (head y)) values
+                        let spams = map (!!1) $ concat $ tail groupedData
+                        let hams = map tail $ concat $ head groupedData
+
+                        let parsedSpams = map (parseGrams wordBlackList n dlims) spams
+                        let parsedHams = map (parseGrams wordBlackList n dlims) hams
+
+                        let all = parsedSpams ++ parsedHams
+                        let corpus = createCorpus all
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
-                        
+
                         -- classify
                         newMessage <- readFile f
-
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
-
-                        -- test tf-idf (hardcoding number of docs for now)
-                        let occurenceMap = gramOccursMap $ numOfGramOccurs parsedGrams
-                        -- let freqVector = frequencyVector parsedNewMessage occurenceMap 6 "your"
-
-                        let freqVector = map (gramFrequency parsedNewMessage occurenceMap (fromIntegral numOfDocs)) parsedNewMessage
-                        putStr $ show freqVector
-
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
                         let isSpam = classifySentence vectSpams vectHams newMessageVect
+                        putStr $ show isSpam
                         
                         return isSpam
 
@@ -86,5 +73,8 @@ doesListContainSubFolder [] s = False
 doesListContainSubFolder (hd:tl) s
                                    | hd == s = True
                                    | otherwise = doesListContainSubFolder tl s
+
+splitsep :: (a -> Bool) -> [a] -> [[a]]
+splitsep fun lst = foldr (\x (h:t) -> if fun x then []:h:t else (x:h):t) [[]] lst
 
 
