@@ -8,13 +8,6 @@ import Vectorizer
 -- to train the model need to provide a path to folder with 2 subfolders
 -- one subfolder will contain "spam" texts, the second - "ham"
 
--- construct conditional and marginal probabilities from docs in filepath
--- assuming that two subfolders in filepath are "spam" and "ham",
--- use location of a doc in either subfolder to determine its class
-buildProb :: FilePath -> [[Double]]
-buildProb fldr = []
-
-
 -- driver of the program
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
 -- pick your n to split text into n-grams
