@@ -6,6 +6,8 @@ import Classifier
 import ClassifierCosSim
 import Corpufier
 import Vectorizer
+import Data.List
+import Data.Ord (comparing)
 import CustomTypes
 
 -- To run it, try:
@@ -59,38 +61,44 @@ getVal searchString (h:t) = if (searchString == fst h)
 -- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
 -- pick your n to split text into n-grams
 
+
 classifyFile :: FilePath -> Int -> Strategy -> IO Bool
 classifyFile f n classifyStrat = do
-                        content <- listFldrContent "train"
-                        dir <- getCurrentDirectory
-                        let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
-                        let dirTrainHam = dir ++ "/train/" ++ head (tail content) ++ "/"
-                        spams <- getDirectoryContents dirTrainSpam 
-                        hams <- getDirectoryContents dirTrainHam  
-                        spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
-                        hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
-           
-                        -- build corpus from spam and ham
+                        --content <- listFldrContent "train"
+                        --dir <- getCurrentDirectory
+                        --let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
+                        --let dirTrainHam = dir ++ "/train/" ++ head (tail content) ++ "/"
+                        --spams <- getDirectoryContents dirTrainSpam 
+                        --hams <- getDirectoryContents dirTrainHam  
+                        --spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
+                        --hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
+
+                        file <- readFile "SMSSpamCollection"
+                        let values = sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+                        let groupedData = groupBy (\x y -> (head x) == (head y)) values
+                        let spams = map (!!1) $ concat $ tail groupedData
+                        let hams = map tail $ concat $ head groupedData
                         
                         -- can later change these to read from relevant files
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
                         
-                        let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
-                        let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings                        
+                        --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
+                        --let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings  
+                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 3.3
+                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 3.6
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
-                        
+
                         -- classify
                         newMessage <- readFile f
-
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
+
                         let isSpam = classifyStrat vectSpams vectHams newMessageVect
-                        
                         return isSpam
 
                         
@@ -116,5 +124,8 @@ doesListContainSubFolder [] s = False
 doesListContainSubFolder (hd:tl) s
                                    | hd == s = True
                                    | otherwise = doesListContainSubFolder tl s
+
+splitsep :: (a -> Bool) -> [a] -> [[a]]
+splitsep fun lst = foldr (\x (h:t) -> if fun x then []:h:t else (x:h):t) [[]] lst
 
 
