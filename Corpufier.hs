@@ -52,16 +52,25 @@ gramFrequency sentence nDocs occMap gram =
 count :: Eq a => a -> [a] -> Int
 count x = length . filter (==x)
 
-tfIdf docs =
-     [(\(doc, freqVect) -> filterZeroFreq doc freqVect) tup | tup <- zip docs freqVectors]
+-- takes in a list of parsed sentences and a threshold value and
+-- filters out grams that have tf-idf values <= the threshold.
+tfIdfFilter docs threshold =
+     [(\(doc, freqVect) -> filterSentence doc freqVect threshold) tup | tup <- zip docs freqVectors]
      where
         nDocs = length docs
         occMap = gramOccursMap docs
         freqVectors = map (frequencyVector nDocs occMap) docs
 
-
+-- takes in a total number of documents (nDocs) an occurence map (occMap) and a sentence
+-- and returns a vector of corresponding tf-idf values for each gram in the sentence
 frequencyVector nDocs occMap sentence =
     map (gramFrequency sentence (fromIntegral nDocs) occMap) sentence
 
-filterZeroFreq sentence freqVect =
-    [fst tup| tup <- zip sentence freqVect, (snd tup) > 0]
+-- takes in a sentence and its corresponding tf-idf vector and filters out
+-- the grams that have a corresponding tf-idf value <= threshold
+filterSentence sentence freqVect threshold =
+    [fst tup| tup <- zip sentence freqVect, (snd tup) > threshold]
+-- input sentence = ["test", "gram", "is", "here"]
+--       freqVect = [0.056, 0.123, 0.003, 0.044] -- corresponding tf-idf vector for the sentence
+--       threshold = 0.04
+-- returns ["test", "gram", "here"]

@@ -37,7 +37,9 @@ classifyFile f n = do
                         let parsedHams = map (parseGrams wordBlackList n dlims) hams
 
                         let all = parsedSpams ++ parsedHams
-                        let corpus = createCorpus all
+                        let tfIdfFiltered = tfIdfFilter all 4.0
+
+                        let corpus = createCorpus tfIdfFiltered
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
