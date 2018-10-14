@@ -33,13 +33,14 @@ classifyFile f n = do
                         let spams = map (!!1) $ concat $ tail groupedData
                         let hams = map tail $ concat $ head groupedData
 
-                        let parsedSpams = map (parseGrams wordBlackList n dlims) spams
-                        let parsedHams = map (parseGrams wordBlackList n dlims) hams
+                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 3.3
+                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 3.6
 
                         let all = parsedSpams ++ parsedHams
-                        let tfIdfFiltered = tfIdfFilter all 4.0
 
-                        let corpus = createCorpus tfIdfFiltered
+                        let corpus = createCorpus all
+
+                        putStr $ show (length corpus)
 
                         let vectSpams = map (vectorizeSentence corpus) parsedSpams
                         let vectHams = map (vectorizeSentence corpus) parsedHams
