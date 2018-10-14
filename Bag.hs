@@ -48,9 +48,9 @@ choiceDriver prompt options optionMap =
 -- Nothing otherwise
 getVal :: String -> [(String, a)] -> Maybe a
 getVal searchString [] = Nothing
-getVal searchString (h:t) = if (str == fst h)
+getVal searchString (h:t) = if (searchString == fst h)
                    then Just (snd h)
-                   else getVal str t
+                   else getVal searchString t
         
 -- to train the model need to provide a path to folder with 2 subfolders
 -- one subfolder will contain "spam" texts, the second - "ham"
