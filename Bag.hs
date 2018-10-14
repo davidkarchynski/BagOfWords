@@ -85,8 +85,8 @@ classifyFile f n classifyStrat = do
                         
                         --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
                         --let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings  
-                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 3.3
-                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 3.6
+                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 0.0--3.3
+                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 0.0--3.6
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 

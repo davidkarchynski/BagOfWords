@@ -7,8 +7,7 @@ import CustomTypes
 -- corresponds to a Gram at position n in Corpus: 1 when Gram is in the sentence
 -- 0 when Gram is missing. length of Corpus = length of output list
 vectorizeSentence :: Corpus -> Sentence -> [Int]
-vectorizeSentence c s = foldr (\ corpusGram acc -> if (elem corpusGram s) then 1:acc else 0:acc) [] c
-
+vectorizeSentence c s = map (\ corpusGram -> if (elem corpusGram s) then 1 else 0) c
 -- vectorizeSentence ["alert", "password", "security", "username"] ["please", "give", "us", "your", "username", "and", "password"]
 --      should return [0, 1, 0, 1]
 -- vectorizeSentence ["alert", "password", "security", "username"] ["please", "give", "us", "your", "first", "and", "last", "name"]
