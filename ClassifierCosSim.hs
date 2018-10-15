@@ -3,6 +3,7 @@ module ClassifierCosSim
     ) where
 
 import CustomTypes
+import Data.Foldable
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
@@ -63,6 +64,6 @@ dotProduct v1 v2 = sum (map (\ (e1, e2) -> e1 * e2) zippedVectors)
 -- calculates the length of a given vector
 vectorLength :: (Floating a) => Vector -> a
 vectorLength v = sqrt (fromIntegral (sumOfSquares))
-    where sumOfSquares = foldr (\ e acc -> e^2 + acc) 0 v
+    where sumOfSquares = foldl' (\ acc e -> e^2 + acc) 0 v
 -- vectorLength [1, 1, 1, 1] = 2.0
 -- vectorLength [3, 4] = 5.0

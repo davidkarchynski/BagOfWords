@@ -74,7 +74,7 @@ classifyFile f n classifyStrat = do
                         --hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
 
                         file <- readFile "SMSSpamCollection"
-                        let values = sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+                        let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
                         let groupedData = groupBy (\x y -> (head x) == (head y)) values
                         let spams = map (!!1) $ concat $ tail groupedData
                         let hams = map tail $ concat $ head groupedData
