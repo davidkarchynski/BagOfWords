@@ -63,7 +63,7 @@ vectorCosine v1 v2 = (fromIntegral (dotProduct v1 v2)) / productOfLengths
 -- given two vectors of the same dimension
 -- calculates their dot product
 dotProduct :: SpVector Int -> SpVector Int -> Int
-dotProduct v1 v2 = foldlWithKeySV' (\acc i e -> acc + (lookupDenseSV i v2)*e) 0 v2
+dotProduct v1 v2 = foldlWithKeySV' (\acc i e -> acc + (lookupDenseSV i v2)*e) 0 v1
     
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 4)])
