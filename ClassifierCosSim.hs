@@ -41,8 +41,10 @@ vectorSum v1 v2 = fromListSV (length v1) (elemWithSameInd ++ elemWithDiffIndices
              elemWithDiffIndices = foldl' (\acc (i,e) -> if (i `elem` sameInd) then acc else acc ++ [(i,e)]) [] (l1++l2)
              l1 = toListSV v1
              l2 = toListSV v2
-
--- vectorSum [(0, 1), (1, 1), (2, 1), (3, 1)] [(1, 4)] should return [(1,5)]
+             
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 4)])
+-- vectorSum x y should give SV (4) [(0,1),(1,5),(2,1),(3,1)]
 
 
 -- given two vectors of the same dimension
