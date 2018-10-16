@@ -1,69 +1,80 @@
-module ClassifierCosSim
-    (classifySentenceCosSim
-    ) where
+module ClassifierCosSim where
 
 import CustomTypes
 import Data.Foldable
+import Data.Sparse.SpVector (toListSV, SpVector, fromListSV)
+-- import Vectorizer -- use for testing
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
 -- input vector is vectorized sentence we want to classify
 -- returns true if sentence classified as spam and false otherwise
-classifySentenceCosSim :: Matrix -> Matrix -> Vector -> Bool
+--classifySentenceCosSim :: Matrix -> Matrix -> Vector -> Bool
 classifySentenceCosSim spamM hamM v = (cosSpam > cosHam)
                                 where
                                     cosSpam = vectorCosine spamVector v
                                     cosHam = vectorCosine hamVector v
                                     spamVector = matrixToVector spamM
                                     hamVector = matrixToVector hamM
--- classifySentenceCosSim [[1, 0]] [[0, 1]] [1, 0] should be True
--- classifySentenceCosSim [[1, 0]] [[0, 1]] [0, 1] should be False
--- classifySentenceCosSim [[1, 0, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]] [[0, 1, 0, 0], [0, 0, 1, 1], [0, 0, 0, 1]] [1, 0, 0, 0] should be True
+
+-- x = sparsifyVectSentence (2, [(0, 1), (1, 0)])
+-- y = sparsifyVectSentence (2, [(0, 0), (1, 1)])
+-- classifySentenceCosSim [x] [y] x should be True
+-- classifySentenceCosSim [y] [x] x should be False
 
 -- given an m x n matrix representing m vectorized sentences of n grams
 -- returns a vector with the average direction (summation) of all vectorized sentences
-matrixToVector :: Matrix -> Vector
-matrixToVector [] = [] 
+matrixToVector :: (Eq a, Num a) => [SpVector a] -> SpVector a
+matrixToVector [] = fromListSV 0 []
 matrixToVector (h:t) = foldl (\ acc v -> vectorSum acc v) h t
--- matrixToVector [[0, 1, 2], [5, 5, 5], [1, 2, 3]] should return [6, 8, 10]
--- matrixToVector [[0, 1, 2]] should return [0, 1, 2]
--- matrixToVector [] should return []
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 4)])
+-- matrixToVector [x, y] should return SV (4) [(0,1),(1,5),(2,1),(3,1)]
+-- matrixToVector [] should return SV (0) []
 
 -- given two vectors of the same dimension, return their vector sum
-vectorSum :: Vector -> Vector -> Vector
-vectorSum v1 v2 = [e1 + e2 | (e1, e2) <- zippedVector]
-    where zippedVector = zip v1 v2
--- vectorSum [0, 0, 0] [1, 2, 3] should return [1, 2, 3]
--- vectorSum [1, 2, 3] [1, 2, 3] should return [2, 4, 6]
--- vectorSum [1, 2, 3] [9, 8, 7] should return [10, 10, 10]
--- vectorSum [] [] should return []
+vectorSum :: (Eq a, Num a) => SpVector a -> SpVector a -> SpVector a
+vectorSum v1 v2 = fromListSV (length v1) (elemWithSameInd ++ elemWithDiffIndices)
+        where
+             elemWithSameInd = filter ((-1, -1)/=) [if (i1==i2) then (i1, e1+e2) else (-1, -1)| (i1, e1) <- l1, (i2, e2) <- l2]
+             sameInd = map (fst) elemWithSameInd
+             elemWithDiffIndices = foldl' (\acc (i,e) -> if (i `elem` sameInd) then acc else acc ++ [(i,e)]) [] (l1++l2)
+             l1 = toListSV v1
+             l2 = toListSV v2
+
+-- vectorSum [(0, 1), (1, 1), (2, 1), (3, 1)] [(1, 4)] should return [(1,5)]
+
 
 -- given two vectors of the same dimension
 -- calculates the cosine of the angle between them (number between 0 and 1 inclusive)
 -- a result of 1 means that the two vectors have the same direction
 -- a result of 0 means that the two vectors are orthogonal
 -- ie. the larger the result, the more similar in direction are the two vectors
-vectorCosine :: (Floating a) => Vector -> Vector -> a
-vectorCosine v1 v2 = (fromIntegral $ dotProduct v1 v2) / productOfLengths
+vectorCosine :: Floating a => SpVector Int -> SpVector Int -> a
+vectorCosine v1 v2 = (fromIntegral (dotProduct v1 v2)) / productOfLengths 
     where productOfLengths = (vectorLength v1) * (vectorLength v2)
--- vectorCosine [1, 0] [2, 0]       should return 1
--- vectorCosine [1, 0, 0] [0, 1, 0] should return 0
--- vectorCosine [1, 0] [1, 1]       should return 0.7071067811865475
--- vectorCosine [1, 0, 0] [1, 1, 0] should return 0.7071067811865475
+
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 4)])
+-- vectorCosine y y should return 1
+-- vectorCosine x y should return 0.5
 
 -- given two vectors of the same dimension
 -- calculates their dot product
-dotProduct :: Vector -> Vector -> Int
-dotProduct v1 v2 = sum (map (\ (e1, e2) -> e1 * e2) zippedVectors)
-    where zippedVectors = zip v1 v2
--- dotProduct [] [] = 0
--- dotProduct [0, 0, 0] [1, 1, 1] = 0
--- dotProduct [1, 2, 3] [1, 1, 1] = 6
--- dotProduct [1000, 100, 10, 1] [4, 3, 2, 1] = 4321
+dotProduct :: (Eq b, Num b) => SpVector b -> SpVector b -> b
+dotProduct v1 v2 = sum $ map (snd) (filter ((-1, -1)/=) [if (i1==i2) then (i1, e1*e2) else (-1, -1)| (i1, e1) <- toListSV v1, (i2, e2) <- toListSV v2])
+
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 4)])
+-- dotProduct y y should return 16
+-- dotProduct x x should return 4
+-- dotProduct x y should return 4
 
 -- calculates the length of a given vector
+-- works only for sparse vector of 1s
 vectorLength :: (Floating a) => Vector -> a
 vectorLength v = sqrt (fromIntegral (sumOfSquares))
-    where sumOfSquares = foldl' (\ acc e -> e^2 + acc) 0 v
--- vectorLength [1, 1, 1, 1] = 2.0
--- vectorLength [3, 4] = 5.0
+    where sumOfSquares = foldl' (\ acc (i, e) -> e^2 + acc) 0 (toListSV v)
+
+-- vectorLength $ sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)]) = 2.0
+-- vectorLength $ sparsifyVectSentence (4, [(1, 4)]) = 1.0

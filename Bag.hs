@@ -90,13 +90,13 @@ classifyFile f n classifyStrat = do
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
-                        let vectSpams = map (vectorizeSentence corpus) parsedSpams
-                        let vectHams = map (vectorizeSentence corpus) parsedHams
+                        let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
+                        let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
 
                         -- classify
                         newMessage <- readFile f
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
-                        let newMessageVect = vectorizeSentence corpus parsedNewMessage
+                        let newMessageVect = sparsifyVectSentence $ vectorizeSentence corpus parsedNewMessage
 
                         let isSpam = classifyStrat vectSpams vectHams newMessageVect
                         return isSpam
