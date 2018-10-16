@@ -2,14 +2,13 @@ module ClassifierCosSim where
 
 import CustomTypes
 import Data.Foldable
-import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, foldlWithKeySV', svDim)
-import Vectorizer -- use for testing
+import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, foldlWithKeySV', svDim, lookupDenseSV)
+--import Vectorizer -- use for testing
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
 -- input vector is vectorized sentence we want to classify
 -- returns true if sentence classified as spam and false otherwise
---classifySentenceCosSim :: Matrix -> Matrix -> Vector -> Bool
 classifySentenceCosSim :: [SpVector Int] -> [SpVector Int] -> SpVector Int -> Bool
 classifySentenceCosSim spamM hamM v = (cosSpam > cosHam)
                                 where
@@ -33,16 +32,14 @@ matrixToVector (h:t) = foldl (\ acc v -> vectorSum acc v) h t
 -- matrixToVector [x, y] should return SV (4) [(0,1),(1,5),(2,1),(3,1)]
 -- matrixToVector [] should return SV (0) []
 
--- given two vectors of the same dimension, return their vector sum
+-- given two vectors of the same dimension, return their vector sum       
 vectorSum :: SpVector Int -> SpVector Int -> SpVector Int
-vectorSum v1 v2 = fromListSV (svDim v1) (elemWithSameInd ++ elemWithDiffIndices)
+vectorSum v1 v2 = fromListSV vectLen vectSum
         where
-             elemWithSameInd = filter ((-1, -1)/=) [if (i1==i2) then (i1, e1+e2) else (-1, -1)| (i1, e1) <- l1, (i2, e2) <- l2]
-             sameInd = map (fst) elemWithSameInd
-             elemWithDiffIndices = foldl' (\acc (i,e) -> if (i `elem` sameInd) then acc else acc ++ [(i,e)]) [] (l1++l2)
-             l1 = toListSV v1
-             l2 = toListSV v2
-             
+             vectSum = foldr (\ i acc -> (i,(lookupDenseSV i v1) + (lookupDenseSV i v2)):acc) [] indexes
+             indexes = [0..vectLen]
+             vectLen = svDim v1
+
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 4)])
 -- vectorSum x y should give SV (4) [(0,1),(1,5),(2,1),(3,1)]
@@ -64,9 +61,11 @@ vectorCosine v1 v2 = (fromIntegral (dotProduct v1 v2)) / productOfLengths
 
 -- given two vectors of the same dimension
 -- calculates their dot product
-dotProduct :: (Eq b, Num b) => SpVector b -> SpVector b -> b
-dotProduct v1 v2 = sum $ map (snd) (filter ((-1, -1)/=) [if (i1==i2) then (i1, e1*e2) else (-1, -1)| (i1, e1) <- toListSV v1, (i2, e2) <- toListSV v2])
+dotProduct :: SpVector Int -> SpVector Int -> Int
+dotProduct v1 v2 = foldlWithKeySV' (\ acc i e -> acc + lookUpProduct i v1 e) 0 v2
 
+lookUpProduct i v1 e2 = if (e2 == 0) then e2 else e2 * (lookupDenseSV i v1)
+    
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 4)])
 -- dotProduct y y should return 16
