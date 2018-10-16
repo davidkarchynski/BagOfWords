@@ -3,7 +3,7 @@ module Classifier
     
 import CustomTypes
 import Data.Sparse.SpVector (SpVector, foldlWithKeySV', lookupDenseSV, svDim)
---import Vectorizer -- for testing
+-- import Vectorizer -- for testing
 
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
@@ -62,7 +62,7 @@ getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtr
 countSameElement :: Matrix -> Int -> Int -> Int -> Int
 countSameElement mtrx sz indx elmnt = if (elmnt == 1) then countOnes else (sz - countOnes)
                  where 
-                       countOnes = sum [foldlWithKeySV' (\acc i e -> if ((indx == i) && (e == 1)) then acc+1 else acc) 0 v | v <- mtrx]
+                       countOnes = sum [if (lookupDenseSV indx v == 1) then 1 else 0 | v <- mtrx]
 
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 1)])
