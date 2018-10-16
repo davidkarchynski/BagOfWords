@@ -4,7 +4,7 @@ module ClassifierCosSim
 import CustomTypes
 import Data.Foldable
 import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, foldlWithKeySV', svDim, lookupDenseSV)
---import Vectorizer -- use for testing
+import Vectorizer -- use for testing
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
@@ -33,14 +33,22 @@ matrixToVector (h:t) = foldl (\ acc v -> vectorSum acc v) h t
 -- matrixToVector [x, y] should return SV (4) [(0,1),(1,5),(2,1),(3,1)]
 -- matrixToVector [] should return SV (0) []
 
--- given two vectors of the same dimension, return their vector sum       
+-- given two vectors of the same dimension, return their vector sum
 vectorSum :: SpVector Int -> SpVector Int -> SpVector Int
-vectorSum v1 v2 = fromListSV vectLen vectSum
+vectorSum v1 v2 = fromListSV vectLen vectSumList
         where
-             vectSum = foldr (\ i acc -> (i,(lookupDenseSV i v1) + (lookupDenseSV i v2)):acc) [] indexes
-             indexes = [0..vectLen]
+             vectSumList = vectorSumHelper (toListSV v1) (toListSV v2) []
              vectLen = svDim v1
-
+             
+vectorSumHelper :: [(Int, Int)] -> [(Int, Int)] -> [(Int, Int)] -> [(Int, Int)]
+vectorSumHelper iv1 [] acc = iv1 ++ acc
+vectorSumHelper [] iv2 acc = iv2 ++ acc
+vectorSumHelper ((i1, e1):t1) ((i2, e2):t2) acc =
+    if (i1 == i2) then vectorSumHelper t1 t2 ((i1, e1+e2):acc)
+                  else if (i1 < i2)
+                  then vectorSumHelper t1 ((i2, e2):t2) ((i1, e1):acc)
+                  else vectorSumHelper ((i1, e1):t1) t2 ((i2, e2):acc)
+             
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 4)])
 -- vectorSum x y should give SV (4) [(0,1),(1,5),(2,1),(3,1)]
