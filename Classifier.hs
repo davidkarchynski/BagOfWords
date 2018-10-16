@@ -1,8 +1,12 @@
 module Classifier 
-    (classifySentence
+    (classifySentence,
+    classSentence
     ) where
     
 import CustomTypes
+import Corpufier
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
@@ -13,11 +17,11 @@ classifySentence spamM hamM v = (pSpam > pHam)
                                 where 
                                      condPSpam = map (fst) condPs           
                                      margPSpam = (fromIntegral $ length spamM)/(fromIntegral $ (length spamM) + (length hamM))
-                                     pSpam = (product condPSpam)*margPSpam
+                                     pSpam = (Prelude.product condPSpam)*margPSpam
                                      
                                      condPHam = map (snd) condPs
                                      margPHam = 1 - margPSpam
-                                     pHam = (product condPHam)*margPHam
+                                     pHam = (Prelude.product condPHam)*margPHam
  
                                      condPs = getCondProb (zip spamCount hamCount)
                                      spamCount = getAllCounts spamM v
@@ -52,3 +56,30 @@ countSameElement :: Matrix -> Int -> Int -> Int
 countSameElement mtrx indx elmnt = length (filter (\ v -> v !! indx == elmnt) mtrx)
 -- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 0 1 should give 2
 -- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 1 1 should give 1
+
+
+
+classSentence spams hams sentence =
+    pSentence + pSpamHam > 0
+    where
+        nSpam = length spams
+        nHam = length hams
+        nTotal = nSpam + nHam
+        sMap = gramOccursMap spams
+        hMap = gramOccursMap hams
+        pSpam = fromIntegral nSpam / fromIntegral nTotal
+        pHam = fromIntegral nHam / fromIntegral nTotal
+        pSpamHam = logBase (fromIntegral 10) (pSpam / pHam)
+        pSentence = sum $ map (\gram -> gramPosteriorProb gram sMap hMap nTotal) sentence
+
+gramProb gram occMap totalCount =
+    if gramOccurs == 0 then 0 else fromIntegral gramOccurs / fromIntegral totalCount
+    where
+        gramOccurs = (lookupNumOccurences gram occMap) :: Int
+
+gramPosteriorProb gram sMap hMap totalCount =
+    if (isNaN prob) then 0 else prob
+    where
+        sProb = gramProb gram sMap totalCount
+        hProb = gramProb gram hMap totalCount
+        prob = log (sProb / hProb)

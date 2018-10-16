@@ -85,8 +85,8 @@ classifyFile f n classifyStrat = do
                         
                         --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
                         --let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings  
-                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 3.3
-                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 3.6
+                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 0.0
+                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 0.0
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
@@ -98,6 +98,10 @@ classifyFile f n classifyStrat = do
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
                         let newMessageVect = vectorizeSentence corpus parsedNewMessage
 
+                        let test = classSentence parsedSpams parsedHams parsedNewMessage
+                        putStr "-------\n\n"
+                        putStr $ show test
+                        putStr "\n\n-------\n\n"
                         let isSpam = classifyStrat vectSpams vectHams newMessageVect
                         return isSpam
 
