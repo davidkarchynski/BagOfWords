@@ -1,8 +1,9 @@
-module Classifier 
-    (classifySentence
-    ) where
+module Classifier where
     
 import CustomTypes
+import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, toDenseListSV, svDim)
+-- import Vectorizer -- for testing
+
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
@@ -23,9 +24,11 @@ classifySentence spamM hamM v = (pSpam > pHam)
                                      spamCount = getAllCounts spamM v
                                      hamCount = getAllCounts hamM v
 -- some basic tests
--- classifySentence [[1, 0]] [[0, 1]] [1, 0] should be True
--- classifySentence [[1, 0]] [[0, 1]] [0, 1] should be False
--- classifySentence [[1, 0, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]] [[0, 1, 0, 0], [0, 0, 1, 1], [0, 0, 0, 1]] [1, 0, 0, 0] should be True
+-- x = sparsifyVectSentence (2, [(0, 1), (1, 0)])
+-- y = sparsifyVectSentence (2, [(0, 0), (1, 1)])
+-- classifySentence [x] [y] x should be True
+-- classifySentence [y] [x] x should be False
+
 
 -- given a list of (spamCount, hamCount) zipped tuples
 -- returns the conditional probability of each as (spamCount/totalCount, hamCount/totalCount)
@@ -35,20 +38,33 @@ getCondProb zippedCounts = map (\(x,y) -> let intX = fromIntegral x
                                               intSum = intX + intY in
                                               (intX/intSum, intY/intSum)) 
                                           zippedCounts
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
 -- getCondProb [(0, 1), (1,0)] should return [(0.0, 1.0), (1.0, 0.0)]
 -- getCondProb [(1, 1), (2,2)] should return [(0.5, 0.5), (0.5, 0.5)]
 -- getCondProb [(3, 1), (1,4)] should return [(0.75, 0.25), (0.2, 0.8)]
- 
--- given a reference matrix mtrx and a target vector vctr
--- returns a vector of with each entry i = the number of matches between vctr's i'th entry and mtrx's i'th entry in each of its row
-getAllCounts :: Matrix -> Vector -> [Int]
-getAllCounts mtrx vctr = map (\ (e, index) -> countSameElement mtrx index e) indexedVector
-    where indexedVector = zip vctr [0..]
--- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [0, 0, 1] should give [1,2,3]
--- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [1, 1, 1] should give [2,1,3]
 
--- count occurences of element elmnt in column indx in the matrix mtrx
-countSameElement :: Matrix -> Int -> Int -> Int
-countSameElement mtrx indx elmnt = length (filter (\ v -> v !! indx == elmnt) mtrx)
--- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 0 1 should give 2
--- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 1 1 should give 1
+
+-- given a reference matrix mtrx and a target vector vctr
+-- returns a vector of occurences in the matrix for each word present in vector
+getAllCounts :: Matrix -> Vector -> [Int]
+getAllCounts mtrx v = [(countSameElement mtrx (svDim v) i e)| (i, e) <- (toListSV v)]
+
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
+-- getAllCounts [x] x should be [1,1,1,1] 
+-- getAllCounts [x, x] x should be [2,2,2,2]
+-- getAllCounts [x,y] x should be [1,2,1,1]
+-- getAllCounts [y, y] x sould be [0,2,0,0]
+
+-- count occurences of 1s or 0s in column indx in the matrix mtrx
+countSameElement :: Matrix -> Int -> Int -> Int -> Int
+countSameElement mtrx sz indx elmnt = if (elmnt == 1) then countOnes else (sz - countOnes)
+     where onesAndZeroMtrx = [[ if ((indx == i) && (e == 1)) then 1 else 0 | (i, e) <- toListSV v] | v <- mtrx]
+           countOnes = sum $ concat onesAndZeroMtrx
+
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
+-- countSameElement [x, x, x, y] 4 0 1 should be 3
+-- countSameElement [x, x, x, y] 4 2 0 should be 1
+-- countSameElement [y, y] 4 1 1 should be 2
