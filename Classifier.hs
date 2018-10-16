@@ -1,8 +1,9 @@
-module Classifier where
+module Classifier 
+        (classifySentence) where
     
 import CustomTypes
-import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, toDenseListSV, svDim)
--- import Vectorizer -- for testing
+import Data.Sparse.SpVector (SpVector, foldlWithKeySV', lookupDenseSV, svDim)
+--import Vectorizer -- for testing
 
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
@@ -48,7 +49,7 @@ getCondProb zippedCounts = map (\(x,y) -> let intX = fromIntegral x
 -- given a reference matrix mtrx and a target vector vctr
 -- returns a vector of occurences in the matrix for each word present in vector
 getAllCounts :: Matrix -> Vector -> [Int]
-getAllCounts mtrx v = [(countSameElement mtrx (svDim v) i e)| (i, e) <- (toListSV v)]
+getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtrx (svDim v) i e)]) [] v
 
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 1)])
@@ -60,8 +61,8 @@ getAllCounts mtrx v = [(countSameElement mtrx (svDim v) i e)| (i, e) <- (toListS
 -- count occurences of 1s or 0s in column indx in the matrix mtrx
 countSameElement :: Matrix -> Int -> Int -> Int -> Int
 countSameElement mtrx sz indx elmnt = if (elmnt == 1) then countOnes else (sz - countOnes)
-     where onesAndZeroMtrx = [[ if ((indx == i) && (e == 1)) then 1 else 0 | (i, e) <- toListSV v] | v <- mtrx]
-           countOnes = sum $ concat onesAndZeroMtrx
+                 where 
+                       countOnes = sum [foldlWithKeySV' (\acc i e -> if ((indx == i) && (e == 1)) then acc+1 else acc) 0 v | v <- mtrx]
 
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 1)])
