@@ -71,7 +71,6 @@ dotProduct v1 v2 = sum $ map (snd) (filter ((-1, -1)/=) [if (i1==i2) then (i1, e
 -- dotProduct x y should return 4
 
 -- calculates the length of a given vector
--- works only for sparse vector of 1s
 vectorLength :: (Floating a) => Vector -> a
 vectorLength v = sqrt (fromIntegral (sumOfSquares))
     where sumOfSquares = foldl' (\ acc (i, e) -> e^2 + acc) 0 (toListSV v)
