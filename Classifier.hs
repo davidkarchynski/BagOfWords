@@ -1,12 +1,16 @@
 module Classifier 
     (classifySentence,
-    classSentence
-    ) where
+    classSentence) 
+    where
     
 import CustomTypes
 import Corpufier
 import Data.Map (Map)
 import qualified Data.Map as Map
+
+import Data.Sparse.SpVector (SpVector, foldlWithKeySV', lookupDenseSV, svDim)
+-- import Vectorizer -- for testing
+
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
@@ -27,9 +31,11 @@ classifySentence spamM hamM v = (pSpam > pHam)
                                      spamCount = getAllCounts spamM v
                                      hamCount = getAllCounts hamM v
 -- some basic tests
--- classifySentence [[1, 0]] [[0, 1]] [1, 0] should be True
--- classifySentence [[1, 0]] [[0, 1]] [0, 1] should be False
--- classifySentence [[1, 0, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]] [[0, 1, 0, 0], [0, 0, 1, 1], [0, 0, 0, 1]] [1, 0, 0, 0] should be True
+-- x = sparsifyVectSentence (2, [(0, 1), (1, 0)])
+-- y = sparsifyVectSentence (2, [(0, 0), (1, 1)])
+-- classifySentence [x] [y] x should be True
+-- classifySentence [y] [x] x should be False
+
 
 -- given a list of (spamCount, hamCount) zipped tuples
 -- returns the conditional probability of each as (spamCount/totalCount, hamCount/totalCount)
@@ -39,24 +45,39 @@ getCondProb zippedCounts = map (\(x,y) -> let intX = fromIntegral x
                                               intSum = intX + intY in
                                               (intX/intSum, intY/intSum)) 
                                           zippedCounts
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
 -- getCondProb [(0, 1), (1,0)] should return [(0.0, 1.0), (1.0, 0.0)]
 -- getCondProb [(1, 1), (2,2)] should return [(0.5, 0.5), (0.5, 0.5)]
 -- getCondProb [(3, 1), (1,4)] should return [(0.75, 0.25), (0.2, 0.8)]
- 
+
+
 -- given a reference matrix mtrx and a target vector vctr
--- returns a vector of with each entry i = the number of matches between vctr's i'th entry and mtrx's i'th entry in each of its row
+-- returns a vector of occurences in the matrix for each word present in vector
 getAllCounts :: Matrix -> Vector -> [Int]
-getAllCounts mtrx vctr = map (\ (e, index) -> countSameElement mtrx index e) indexedVector
-    where indexedVector = zip vctr [0..]
--- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [0, 0, 1] should give [1,2,3]
--- getAllCounts [[1, 0, 1], [0, 0, 1], [1, 1, 1]] [1, 1, 1] should give [2,1,3]
+getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtrx (length mtrx) i e)]) [] v
 
--- count occurences of element elmnt in column indx in the matrix mtrx
-countSameElement :: Matrix -> Int -> Int -> Int
-countSameElement mtrx indx elmnt = length (filter (\ v -> v !! indx == elmnt) mtrx)
--- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 0 1 should give 2
--- countSameElement [[1, 0, 1], [0, 0, 1], [1, 1, 1]] 1 1 should give 1
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
+-- getAllCounts [x] x should be [1,1,1,1] 
+-- getAllCounts [x, x] x should be [2,2,2,2]
+-- getAllCounts [x,y] x should be [1,2,1,1]
+-- getAllCounts [y, y] x sould be [0,2,0,0]
+-- getAllCounts [x, x] y sould be [2]
 
+-- count occurences of 1s or 0s in column indx in the matrix mtrx
+countSameElement :: Matrix -> Int -> Int -> Int -> Int
+countSameElement mtrx sz indx elmnt = if (elmnt == 1) then countOnes else (sz - countOnes)
+                 where 
+                       countOnes = sum [if (lookupDenseSV indx v == 1) then 1 else 0 | v <- mtrx]
+
+-- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
+-- y = sparsifyVectSentence (4, [(1, 1)])
+-- countSameElement [x, x, x, y] 4 0 1 should be 3
+-- countSameElement [x, x, x, y] 4 2 0 should be 1
+-- countSameElement [y, y] 4 1 1 should be 2
+
+classSentence :: [Sentence] -> [Sentence] -> [Gram] -> Bool
 classSentence spams hams sentence =
     (pSentence + pHamSpam) > 0
     where
@@ -70,11 +91,13 @@ classSentence spams hams sentence =
         pHamSpam = log (pSpam / pHam)
         pSentence = sum $ map (\gram -> gramPosteriorProb gram sMap hMap nSpam nHam) sentence
 
+gramProb :: (Fractional p) => Gram -> Map Gram Int -> Int -> p
 gramProb gram occMap totalCount =
     if gramOccurs == 0 then 0 else fromIntegral gramOccurs / fromIntegral totalCount
     where
         gramOccurs = (lookupNumOccurences gram occMap) :: Int
 
+gramPosteriorProb :: RealFloat p => Gram -> Map Gram Int -> Map Gram Int -> Int -> Int -> p
 gramPosteriorProb gram sMap hMap nSpam nHam =
     if isInfinite prob || isNaN prob then 0 else prob
     where

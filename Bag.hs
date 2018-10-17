@@ -74,10 +74,10 @@ classifyFile f n classifyStrat = do
                         --hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
 
                         file <- readFile "SMSSpamCollection"
-                        let values = sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+                        let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
                         let groupedData = groupBy (\x y -> (head x) == (head y)) values
-                        let spams = map (!!1) $ concat $ tail groupedData
-                        let hams = map tail $ concat $ head groupedData
+                        let spams = map (!!1) $ groupedData !! 1
+                        let hams = map (!!1) (head groupedData)
                         
                         -- can later change these to read from relevant files
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
@@ -85,24 +85,21 @@ classifyFile f n classifyStrat = do
                         
                         --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
                         --let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings  
-                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 0.0
-                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 0.0
+                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 0.0--3.3
+                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 0.0--3.6
                         
                         let corpus = createCorpus $ parsedSpams ++ parsedHams
 
-                        let vectSpams = map (vectorizeSentence corpus) parsedSpams
-                        let vectHams = map (vectorizeSentence corpus) parsedHams
+                        let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
+                        let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
 
                         -- classify
                         newMessage <- readFile f
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
-                        let newMessageVect = vectorizeSentence corpus parsedNewMessage
+                        let newMessageVect = sparsifyVectSentence $ vectorizeSentence corpus parsedNewMessage
 
-                        let test = classSentence parsedSpams parsedHams parsedNewMessage
-                        putStr "-------\n\n"
-                        putStr $ show test
-                        putStr "\n\n-------\n\n"
-                        let isSpam = classifyStrat vectSpams vectHams newMessageVect
+                        let isSpam = classSentence parsedSpams parsedHams parsedNewMessage
+                        -- let isSpam = classifyStrat vectSpams vectHams newMessageVect
                         return isSpam
 
                         
