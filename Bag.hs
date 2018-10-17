@@ -1,4 +1,3 @@
-import System.Directory (getDirectoryContents, getCurrentDirectory)
 import System.IO
 import Data.Maybe
 import Parser
