@@ -97,9 +97,8 @@ classifyFile f n classifyStrat = do
                         newMessage <- readFile f
                         let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
                         let newMessageVect = sparsifyVectSentence $ vectorizeSentence corpus parsedNewMessage
-
-                        let isSpam = classSentence parsedSpams parsedHams parsedNewMessage
-                        -- let isSpam = classifyStrat vectSpams vectHams newMessageVect
+                        
+                        let isSpam = classifyStrat vectSpams vectHams newMessageVect
                         return isSpam
 
                         

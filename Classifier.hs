@@ -21,11 +21,11 @@ classifySentence spamM hamM v = (pSpam > pHam)
                                 where 
                                      condPSpam = map (fst) condPs           
                                      margPSpam = (fromIntegral $ length spamM)/(fromIntegral $ (length spamM) + (length hamM))
-                                     pSpam = (Prelude.product condPSpam)*margPSpam
+                                     pSpam = (product condPSpam)*margPSpam
                                      
                                      condPHam = map (snd) condPs
                                      margPHam = 1 - margPSpam
-                                     pHam = (Prelude.product condPHam)*margPHam
+                                     pHam = (product condPHam)*margPHam
  
                                      condPs = getCondProb (zip spamCount hamCount)
                                      spamCount = getAllCounts spamM v
@@ -81,8 +81,8 @@ classSentence :: [Sentence] -> [Sentence] -> [Gram] -> Bool
 classSentence spams hams sentence =
     (pSentence + pHamSpam) > 0
     where
-        nSpam = length $ concat spams
-        nHam = length $ concat hams
+        nSpam = length spams
+        nHam = length hams
         nTotal = nSpam + nHam
         sMap = gramOccursMap spams
         hMap = gramOccursMap hams
