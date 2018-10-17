@@ -1,13 +1,9 @@
 # BagOfWords
 Spam detection in Haskell
 
-Classification
+We implement a variation of Bag of Words spam detection algorithm. This involves sourcing, sanitizing and parsing training data used to construct a corpus of unique elements. This corpus is then used to vectorize new unclassified sentences and label them as "spam" or not accordingly.
 
+The program loop asks for user input of classification strategy (Naive Bayes or Cosine Similarity) and file name. Intermediate date matrices are cached during the first iteration of the program making classification almost instantaneous on successive runs. In addition, we can potentially select the value of n to be used in splitting texts into n-grams. Our implementation takes advantage of some external code: sparse vector implementation from Data.Sparse.SpVector and Porter Stemming Algorithms (see the code for references).
 
-There are several strategies for classifying new sentences:
-
-(a) Naive Bayes:
-
-(b) Cosine distance between the unclassified sentence and classified sentences
-
-An alternative approach is to compute a resultant vector for each category (by summing the vectors with a given label) and then compute cosine between the taraget vector and resultants. Smaller cosine determines category.
+To run either compile into executable: ghc --make Bag.hs -O2
+Or :load Bag from ghci followed by main
