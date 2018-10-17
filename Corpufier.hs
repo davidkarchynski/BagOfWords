@@ -24,6 +24,7 @@ removeDups = map head . group . sort
 -- Note: we can use the returned list to create a corpus if we 'map fst lst'.
 --       The output list can also be passed to gramOccursMap function to construct
 --       a map of gram occurences across documents
+gramOccursMap :: [Sentence] -> Map Gram Int
 gramOccursMap sentences =
     Map.fromList . map (\lst -> (head lst, length lst)) $ group $ sort $ concat $ map removeDups sentences
 
@@ -33,12 +34,14 @@ gramOccursMap sentences =
 
 -- takes a map of gram occurences across documents and a gram
 -- returns a number of documents containing word
+lookupNumOccurences :: Gram -> Map Gram Int -> Int
 lookupNumOccurences gram map = case Map.lookup gram map of
     Nothing -> 0
     Just freq -> freq
 
 -- takes in a sentence (i.e a doc), a gram occurences map, total number of docs and a gram 
 -- to get the gram's frequency value
+gramFrequency :: RealFloat a => Sentence -> Int -> Map Gram Int -> Gram -> a
 gramFrequency sentence nDocs occMap gram = 
     if isNaN freq then 0 else freq
     where
@@ -54,6 +57,7 @@ count x = length . filter (==x)
 
 -- takes in a list of parsed sentences and a threshold value and
 -- filters out grams that have tf-idf values <= the threshold.
+tfIdfFilter :: RealFloat b => [Sentence] -> b -> [Sentence]
 tfIdfFilter docs threshold =
      filter (not . null) [(\(doc, freqVect) -> filterSentence doc freqVect threshold) tup | tup <- zip docs freqVectors]
      where
@@ -63,11 +67,13 @@ tfIdfFilter docs threshold =
 
 -- takes in a total number of documents (nDocs) an occurence map (occMap) and a sentence
 -- and returns a vector of corresponding tf-idf values for each gram in the sentence
+frequencyVector :: (RealFloat b) => Int -> Map Gram Int -> Sentence -> [b]
 frequencyVector nDocs occMap sentence =
-    map (gramFrequency sentence (fromIntegral nDocs) occMap) sentence
+    map (gramFrequency sentence nDocs occMap) sentence
 
 -- takes in a sentence and its corresponding tf-idf vector and filters out
 -- the grams that have a corresponding tf-idf value <= threshold
+filterSentence :: Ord b => Sentence -> [b] -> b -> Sentence
 filterSentence sentence freqVect threshold =
     [fst tup| tup <- zip sentence freqVect, (snd tup) > threshold]
 -- input sentence = ["test", "gram", "is", "here"]
