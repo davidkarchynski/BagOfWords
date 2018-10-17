@@ -1,4 +1,3 @@
-import System.Directory (getDirectoryContents, getCurrentDirectory)
 import System.IO
 import Data.Maybe
 import Parser
@@ -9,6 +8,7 @@ import Vectorizer
 import Data.List
 import Data.Ord (comparing)
 import CustomTypes
+import Data.Bool
 
 -- To run it, try:
 -- ghci
@@ -19,14 +19,26 @@ main :: IO ()
 main =
     do
         putStrLn "Starting Bag-Of-Words Spam/Ham Classifier program..."
+        (vectSpams, vectHams, corpus) <- loadLearningData
+        () <- uiLoop vectSpams vectHams corpus
+        return ()
+        
+uiLoop :: Matrix -> Matrix -> Corpus -> IO ()
+uiLoop vectSpams vectHams corpus =
+    do
         strat <- choiceDriver stratSelectPrompt stratList stratMap
         putStrLn "Please enter the name of the text file you would like to classify."
         filePath <- getLine
-        isSpam <- classifyFile filePath 1 strat
+        isSpam <- classifyFile vectSpams vectHams corpus filePath 1 strat
         let response = if (isSpam) then "This is spam" else "This is ham"
         putStrLn response
-        return ()
+        yesNoResponse <- choiceDriver continuePrompt [] yesNoMap
+        if (yesNoResponse) then uiLoop vectSpams vectHams corpus else return ()
          
+         
+continuePrompt = "Would you like to evaluate another file? (enter y or n)"
+yesNoMap = [("y", True), ("n", False)]
+
 stratSelectPrompt = "Please select a classifying strategy (enter 1 or 2)."
 stratList = ["1. Naive Bayes", "2. Cosine Similarity"]
 stratMap = [("1", classifySentence), ("2", classifySentenceCosSim)]
@@ -53,77 +65,42 @@ getVal searchString [] = Nothing
 getVal searchString (h:t) = if (searchString == fst h)
                    then Just (snd h)
                    else getVal searchString t
+    
+-- loads learning data into memory
+-- processes known ham and spam messages into a corpus and matrices to be later used for determining whether
+-- a new unknown message is spam or ham
+loadLearningData :: IO (Matrix, Matrix, Corpus)
+loadLearningData =
+    do
+        file <- readFile "SMSSpamCollection"
+        let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+        let groupedData = groupBy (\x y -> (head x) == (head y)) values
+        let spams = map (!!1) $ groupedData !! 1
+        let hams = map (!!1) (head groupedData)
         
--- to train the model need to provide a path to folder with 2 subfolders
--- one subfolder will contain "spam" texts, the second - "ham"
+        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList 1 dlims) spams) 0.0
+        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList 1 dlims) hams) 0.0
+        
+        let corpus = createCorpus $ parsedSpams ++ parsedHams
 
--- driver of the program
--- fldr is a subfolder in the current directory containing 2 subfolders "spam" and "ham"
--- pick your n to split text into n-grams
+        let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
+        let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
+        return (vectSpams, vectHams, corpus)
 
+-- determines whether the test file is ham/spam based on either Naive Bayes strategy or Cosine Similarity Strategy
+classifyFile :: Matrix -> Matrix -> Corpus -> FilePath -> Int -> Strategy -> IO Bool
+classifyFile vectSpams vectHams corpus f n classifyStrat =
+    do
+        newMessage <- readFile f
+        let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
+        let newMessageVect = sparsifyVectSentence $ vectorizeSentence corpus parsedNewMessage
 
-classifyFile :: FilePath -> Int -> Strategy -> IO Bool
-classifyFile f n classifyStrat = do
-                        --content <- listFldrContent "train"
-                        --dir <- getCurrentDirectory
-                        --let dirTrainSpam = dir ++ "/train/" ++ head content ++ "/"
-                        --let dirTrainHam = dir ++ "/train/" ++ head (tail content) ++ "/"
-                        --spams <- getDirectoryContents dirTrainSpam 
-                        --hams <- getDirectoryContents dirTrainHam  
-                        --spamStrings <- mapM readFile (map (dirTrainSpam ++) $ filter (`notElem` [".", ".."]) spams) 
-                        --hamStrings <- mapM readFile (map (dirTrainHam ++) $ filter (`notElem` [".", ".."]) hams) 
+        let isSpam = classifyStrat vectSpams vectHams newMessageVect
+        return isSpam
 
-                        file <- readFile "SMSSpamCollection"
-                        let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
-                        let groupedData = groupBy (\x y -> (head x) == (head y)) values
-                        let spams = map (!!1) $ groupedData !! 1
-                        let hams = map (!!1) (head groupedData)
-                        
-                        -- can later change these to read from relevant files
-                        let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
-                        let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
-                        
-                        --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
-                        --let parsedHams = map (parseGrams wordBlackList n dlims) hamStrings  
-                        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList n dlims) spams) 0.0--3.3
-                        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList n dlims) hams) 0.0--3.6
-                        
-                        let corpus = createCorpus $ parsedSpams ++ parsedHams
+dlims = "\\\"\n*;,.?!:-()[] " -- don't forget to include whitespaces        
+wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string        
 
-                        let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
-                        let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
-
-                        -- classify
-                        newMessage <- readFile f
-                        let parsedNewMessage = parseGrams wordBlackList n dlims newMessage
-                        let newMessageVect = sparsifyVectSentence $ vectorizeSentence corpus parsedNewMessage
-                        
-                        let isSpam = classifyStrat vectSpams vectHams newMessageVect
-                        return isSpam
-
-                        
--- check that subfolders spam/ham are in the target folder
--- if at least one is missing then return an empty list
--- otherwise return a list containing only 2 elements: spam/ham
-listFldrContent :: [Char] -> IO [[Char]]
-listFldrContent fldr = do
-                          dir <- getCurrentDirectory
-                          contents <- getDirectoryContents $ dir ++ "/" ++ fldr
-                          let check = verifySubFolders contents ["spam", "ham"] 
-                          if check
-                             then  return ["spam", "ham"]  
-                             else return []
-                  
--- verify that list of subfolders contains the subfolders of interst
-verifySubFolders :: [[Char]] -> [[Char]] -> Bool
-verifySubFolders lst sbs = foldr (&&) True [doesListContainSubFolder lst x| x <- sbs]
-
--- check if string is contained in the list of strings
-doesListContainSubFolder :: [[Char]] -> [Char] -> Bool
-doesListContainSubFolder [] s = False 
-doesListContainSubFolder (hd:tl) s
-                                   | hd == s = True
-                                   | otherwise = doesListContainSubFolder tl s
 
 splitsep :: (a -> Bool) -> [a] -> [[a]]
 splitsep fun lst = foldr (\x (h:t) -> if fun x then []:h:t else (x:h):t) [[]] lst
