@@ -49,7 +49,7 @@ getCondProb zippedCounts = map (\(x,y) -> let intX = fromIntegral x
 -- given a reference matrix mtrx and a target vector vctr
 -- returns a vector of occurences in the matrix for each word present in vector
 getAllCounts :: Matrix -> Vector -> [Int]
-getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtrx (svDim v) i e)]) [] v
+getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtrx (length mtrx) i e)]) [] v
 
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
 -- y = sparsifyVectSentence (4, [(1, 1)])
@@ -57,6 +57,7 @@ getAllCounts mtrx v = foldlWithKeySV' (\acc i e -> acc ++ [(countSameElement mtr
 -- getAllCounts [x, x] x should be [2,2,2,2]
 -- getAllCounts [x,y] x should be [1,2,1,1]
 -- getAllCounts [y, y] x sould be [0,2,0,0]
+-- getAllCounts [x, x] y sould be [2]
 
 -- count occurences of 1s or 0s in column indx in the matrix mtrx
 countSameElement :: Matrix -> Int -> Int -> Int -> Int
