@@ -62,7 +62,6 @@ So, e.g, P(spam)= 2/3, P(ham) = 1/3, P(name=1|spam) = 1/2, P(name=0|spam) = 1/2,
 To find the probability of a new sentence [a,b,c,d] being spam or ham (where a, b, c, d are either 0 or 1), we sanitize, vectorize and compute P(ham|name=a, other=b, sweet=c, rose=d) and P(spam|name=a, other=b, sweet=c, rose=d). The label is determined by comparing these probabilities.
 
 
-(b) Distance (e.g., Euclidean) between the unclassified sentence and classified sentences
+(b) Cosine distance between the unclassified sentence and classified sentences
 
-An alternative approach is to compute a resultant vector for each category (by summing the vectors with a given label) and then compute Euclidean distance from the new vectorized sentence to each resultant vector. Whichever is closer, determines the type.
-
+An alternative approach is to compute a resultant vector for each category (by summing the vectors with a given label) and then compute cosine between the taraget vector and resultants. Smaller cosine determines category.
