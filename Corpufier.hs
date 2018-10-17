@@ -55,7 +55,7 @@ count x = length . filter (==x)
 -- takes in a list of parsed sentences and a threshold value and
 -- filters out grams that have tf-idf values <= the threshold.
 tfIdfFilter docs threshold =
-     [(\(doc, freqVect) -> filterSentence doc freqVect threshold) tup | tup <- zip docs freqVectors]
+     filter (not . null) [(\(doc, freqVect) -> filterSentence doc freqVect threshold) tup | tup <- zip docs freqVectors]
      where
         nDocs = length docs
         occMap = gramOccursMap docs
