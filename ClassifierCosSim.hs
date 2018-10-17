@@ -3,14 +3,14 @@ module ClassifierCosSim
 
 import CustomTypes
 import Data.Foldable
-import Data.Sparse.SpVector (toListSV, SpVector, fromListSV, foldlWithKeySV', svDim, lookupDenseSV)
+import Data.Sparse.SpVector (toListSV, fromListSV, foldlWithKeySV', svDim, lookupDenseSV)
 import Vectorizer -- use for testing
 
 -- there are 2 input matrices: one for each category (i.e., spam/ham)
 -- in each matrix each row is a vectorized sentence 
 -- input vector is vectorized sentence we want to classify
 -- returns true if sentence classified as spam and false otherwise
-classifySentenceCosSim :: [SpVector Int] -> [SpVector Int] -> SpVector Int -> Bool
+classifySentenceCosSim :: [Vector] -> [Vector] -> Vector -> Bool
 classifySentenceCosSim spamM hamM v = (cosSpam > cosHam)
                                 where
                                     cosSpam = vectorCosine spamVector v
@@ -25,7 +25,7 @@ classifySentenceCosSim spamM hamM v = (cosSpam > cosHam)
 
 -- given an m x n matrix representing m vectorized sentences of n grams
 -- returns a vector with the average direction (summation) of all vectorized sentences
-matrixToVector :: [SpVector Int] -> SpVector Int
+matrixToVector :: [Vector] -> Vector
 matrixToVector [] = fromListSV 0 []
 matrixToVector (h:t) = foldl (\ acc v -> vectorSum acc v) h t
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
@@ -34,7 +34,7 @@ matrixToVector (h:t) = foldl (\ acc v -> vectorSum acc v) h t
 -- matrixToVector [] should return SV (0) []
 
 -- given two vectors of the same dimension, return their vector sum
-vectorSum :: SpVector Int -> SpVector Int -> SpVector Int
+vectorSum :: Vector -> Vector -> Vector
 vectorSum v1 v2 = fromListSV vectLen vectSumList
         where
              vectSumList = vectorSumHelper (toListSV v1) (toListSV v2) []
@@ -59,7 +59,7 @@ vectorSumHelper ((i1, e1):t1) ((i2, e2):t2) acc =
 -- a result of 1 means that the two vectors have the same direction
 -- a result of 0 means that the two vectors are orthogonal
 -- ie. the larger the result, the more similar in direction are the two vectors
-vectorCosine :: Floating a => SpVector Int -> SpVector Int -> a
+vectorCosine :: Floating a => Vector -> Vector -> a
 vectorCosine v1 v2 = (fromIntegral (dotProduct v1 v2)) / productOfLengths 
     where productOfLengths = (vectorLength v1) * (vectorLength v2)
 
@@ -70,7 +70,7 @@ vectorCosine v1 v2 = (fromIntegral (dotProduct v1 v2)) / productOfLengths
 
 -- given two vectors of the same dimension
 -- calculates their dot product
-dotProduct :: SpVector Int -> SpVector Int -> Int
+dotProduct :: Vector -> Vector -> Int
 dotProduct v1 v2 = foldlWithKeySV' (\acc i e -> acc + (lookupDenseSV i v1)*e) 0 v2
     
 -- x = sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)])
