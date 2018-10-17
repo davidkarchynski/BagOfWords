@@ -80,7 +80,7 @@ classifyFile f n classifyStrat = do
                         let hams = map (!!1) (head groupedData)
                         
                         -- can later change these to read from relevant files
-                        let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
+                        let dlims = "\\\"\n*;,.?!:-()[] " -- don't forget to include whitespaces
                         let wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string
                         
                         --let parsedSpams = map (parseGrams wordBlackList n dlims) spamStrings
