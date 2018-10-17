@@ -76,8 +76,8 @@ classifyFile f n classifyStrat = do
                         file <- readFile "SMSSpamCollection"
                         let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
                         let groupedData = groupBy (\x y -> (head x) == (head y)) values
-                        let spams = map (!!1) $ concat $ tail groupedData
-                        let hams = map tail $ concat $ head groupedData
+                        let spams = map (!!1) $ groupedData !! 1
+                        let hams = map (!!1) (head groupedData)
                         
                         -- can later change these to read from relevant files
                         let dlims = "\n;,.?!:-()[] " -- don't forget to include whitespaces
