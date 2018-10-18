@@ -68,7 +68,7 @@ choiceDriver prompt options optionMap =
             then do choiceDriver prompt options optionMap
             else return (fromJust returnValMaybe)
 
--- prompt user to enter a valid filepath, otherwise repeat
+-- check if file name is valid, if not prompt to reenter file name
 processFileName :: IO String
 processFileName = do
                      f <- getLine  
