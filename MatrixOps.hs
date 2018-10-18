@@ -59,8 +59,3 @@ vectorLength v = sqrt (fromIntegral (sumOfSquares))
 -- vectorLength $ sparsifyVectSentence (4, [(0, 1), (1, 1), (2, 1), (3, 1)]) = 2.0
 -- vectorLength $ sparsifyVectSentence (4, [(1, 4)]) = 1.0
 -- vectorLength $ sparsifyVectSentence (4, [(0, 0), (1, 3), (2, 2), (3, 6)]) = 7.0
-
-
--- forces the vector to evaluate every element
-forceEvaluateVector :: Vector -> Int
-forceEvaluateVector v = foldlWithKeySV' (\ acc _ e -> e) 0 v

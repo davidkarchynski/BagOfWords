@@ -10,6 +10,8 @@ import Data.Ord (comparing)
 import CustomTypes
 import Data.Bool
 import MatrixOps
+import Data.Sparse.SpVector (nzSV)
+
 
 -- To run it, try:
 -- ghci
@@ -23,8 +25,9 @@ main =
         n <- choiceDriver nGramsSelectPrompt [] nGramsMap
         putStrLn "Loading and processing training data..."
         (vectSpams, vectHams, corpus) <- loadLearningData n
-        putStrLn ((forceEvaluateVector (snd vectSpams)) `seq` "finished processing part 1")
-        putStrLn ((forceEvaluateVector (snd vectHams)) `seq` "finished processing part 2")
+        -- forces vectSpams and vectHams to evaluate instead of being lazy
+        putStrLn ((nzSV (snd vectSpams)) `seq` "finished processing part 1")
+        putStrLn ((nzSV (snd vectHams)) `seq` "finished processing part 2")
         () <- uiLoop vectSpams vectHams corpus n
         return ()
         
