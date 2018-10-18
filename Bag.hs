@@ -11,7 +11,7 @@ import CustomTypes
 import Data.Bool
 import MatrixOps
 import Data.Sparse.SpVector (nzSV)
-
+import System.Directory (doesFileExist)
 
 -- To run it, try:
 -- ghci
@@ -30,18 +30,19 @@ main =
         putStrLn ((nzSV (snd vectHams)) `seq` "finished processing part 2")
         () <- uiLoop vectSpams vectHams corpus n
         return ()
+
         
 uiLoop :: ReducedVector -> ReducedVector -> Corpus -> Int -> IO ()
 uiLoop vectSpams vectHams corpus n =
     do
-        strat <- choiceDriver stratSelectPrompt stratList stratMap
+        strat <- choiceDriver stratSelectPrompt stratList stratMap 
         putStrLn "Please enter the name of the text file you would like to classify."
-        filePath <- getLine
+        filePath <- processFileName
         isSpam <- classifyFile vectSpams vectHams corpus filePath n strat
         let response = if (isSpam) then "This is spam" else "This is ham"
         putStrLn response
         yesNoResponse <- choiceDriver continuePrompt [] yesNoMap
-        if (yesNoResponse) then uiLoop vectSpams vectHams corpus n else return ()
+        if (yesNoResponse) then uiLoop vectSpams vectHams corpus n else return ()             
          
 nGramsSelectPrompt = "Please select a value for n (enter 1, 2 or 3) to use for splitting the documents into n-grams."
 nGramsMap = [("1", 1), ("2", 2), ("3", 3)]
@@ -66,7 +67,16 @@ choiceDriver prompt options optionMap =
         if (isNothing returnValMaybe) 
             then do choiceDriver prompt options optionMap
             else return (fromJust returnValMaybe)
-        
+
+-- check if file name is valid, if not prompt to reenter file name
+processFileName :: IO String
+processFileName = do
+                     f <- getLine  
+                     check <- doesFileExist f
+                     if (check) then return f else do  
+                                                       putStrLn "The file name you entered is invalid."
+                                                       processFileName  
+      
 -- given a searchString and a list of tuples (key, value),
 -- returns Just value corresponding to the matching key if found
 -- Nothing otherwise
@@ -115,6 +125,5 @@ classifyFile vectSpams vectHams corpus f n classifyStrat =
 
 dlims = "\\\"\n*;,'./+?!:<>@-=&%#$^_()[] 0123456789" -- don't forget to include whitespaces        
 wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string        
-
 
 
