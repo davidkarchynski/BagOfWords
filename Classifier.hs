@@ -1,7 +1,13 @@
 module Classifier 
-        (classifySentence) where
+    (classifySentence,
+    classSentence) 
+    where
     
 import CustomTypes
+import Corpufier
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Data.Sparse.SpVector (SpVector, foldlWithKeySV', lookupDenseSV, svDim)
 -- import Vectorizer -- for testing
 
@@ -70,3 +76,31 @@ countSameElement mtrx sz indx elmnt = if (elmnt == 1) then countOnes else (sz - 
 -- countSameElement [x, x, x, y] 4 0 1 should be 3
 -- countSameElement [x, x, x, y] 4 2 0 should be 1
 -- countSameElement [y, y] 4 1 1 should be 2
+
+classSentence :: [Sentence] -> [Sentence] -> [Gram] -> Bool
+classSentence spams hams sentence =
+    (pSentence + pHamSpam) > 0
+    where
+        nSpam = length spams
+        nHam = length hams
+        nTotal = nSpam + nHam
+        sMap = gramOccursMap spams
+        hMap = gramOccursMap hams
+        pSpam = fromIntegral nSpam / fromIntegral nTotal
+        pHam = fromIntegral nHam / fromIntegral nTotal
+        pHamSpam = log (pSpam / pHam)
+        pSentence = sum $ map (\gram -> gramPosteriorProb gram sMap hMap nSpam nHam) sentence
+
+gramProb :: (Fractional p) => Gram -> Map Gram Int -> Int -> p
+gramProb gram occMap totalCount =
+    if gramOccurs == 0 then 0 else fromIntegral gramOccurs / fromIntegral totalCount
+    where
+        gramOccurs = (lookupNumOccurences gram occMap) :: Int
+
+gramPosteriorProb :: RealFloat p => Gram -> Map Gram Int -> Map Gram Int -> Int -> Int -> p
+gramPosteriorProb gram sMap hMap nSpam nHam =
+    if isInfinite prob || isNaN prob then 0 else prob
+    where
+        sProb = gramProb gram sMap nSpam
+        hProb = gramProb gram hMap nHam
+        prob = log(sProb / hProb)
