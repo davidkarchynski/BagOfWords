@@ -3,8 +3,9 @@ module CustomTypes
      Sentence,          -- list of words
      Corpus,            -- list of words
      Vector,            -- sparse vector of 1s
+     ReducedVector,     -- a vector representing the sum of all rows in a matrix and the matrix's length
      Matrix,            -- list of Vectors
-     Strategy           -- (Matrix -> Matrix -> Vector -> Bool)
+     Strategy           -- (ReducedVector -> ReducedVector -> Vector -> Bool)
     ) where
     
 {-
@@ -22,6 +23,7 @@ type Sentence = [Gram]
 type Corpus = [Gram]
 
 type Vector = SpVector Int
+type ReducedVector = (Int, Vector) -- int holds the length of the matrix the vector represents
 type Matrix = [Vector]  -- note that each vector is a row in the matrix
 
-type Strategy = (Matrix -> Matrix -> Vector -> Bool)
+type Strategy = (ReducedVector -> ReducedVector -> Vector -> Bool)

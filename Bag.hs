@@ -9,6 +9,8 @@ import Data.List
 import Data.Ord (comparing)
 import CustomTypes
 import Data.Bool
+import MatrixOps
+import Data.Sparse.SpVector (nzSV)
 import System.Directory (doesFileExist)
 
 -- To run it, try:
@@ -21,12 +23,16 @@ main =
     do
         putStrLn "Starting Bag-Of-Words Spam/Ham Classifier program..."
         n <- choiceDriver nGramsSelectPrompt [] nGramsMap
+        putStrLn "Loading and processing training data..."
         (vectSpams, vectHams, corpus) <- loadLearningData n
+        -- forces vectSpams and vectHams to evaluate instead of being lazy
+        putStrLn ((nzSV (snd vectSpams)) `seq` "finished processing part 1")
+        putStrLn ((nzSV (snd vectHams)) `seq` "finished processing part 2")
         () <- uiLoop vectSpams vectHams corpus n
         return ()
 
         
-uiLoop :: Matrix -> Matrix -> Corpus -> Int -> IO ()
+uiLoop :: ReducedVector -> ReducedVector -> Corpus -> Int -> IO ()
 uiLoop vectSpams vectHams corpus n =
     do
         strat <- choiceDriver stratSelectPrompt stratList stratMap 
@@ -83,7 +89,7 @@ getVal searchString (h:t) = if (searchString == fst h)
 -- loads learning data into memory
 -- processes known ham and spam messages into a corpus and matrices to be later used for determining whether
 -- a new unknown message is spam or ham
-loadLearningData :: Int -> IO (Matrix, Matrix, Corpus)
+loadLearningData :: Int -> IO (ReducedVector, ReducedVector, Corpus)
 loadLearningData n =
     do
         file <- readFile "SMSSpamCollection"
@@ -97,12 +103,17 @@ loadLearningData n =
         
         let corpus = createCorpus $ tfIdfFilter (parsedSpams ++ parsedHams) 2.0
 
-        let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
-        let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
-        return (vectSpams, vectHams, corpus)
+        let matrixSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
+        let matrixHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
+        let matrixSpamsLength = length matrixSpams
+        let matrixHamsLength = length matrixHams
+        let vectSpams = matrixToVector matrixSpams
+        let vectHams = matrixToVector matrixHams
+        
+        return ((matrixSpamsLength, vectSpams), (matrixHamsLength, vectHams), corpus)
 
 -- determines whether the test file is ham/spam based on either Naive Bayes strategy or Cosine Similarity Strategy
-classifyFile :: Matrix -> Matrix -> Corpus -> FilePath -> Int -> Strategy -> IO Bool
+classifyFile :: ReducedVector -> ReducedVector -> Corpus -> FilePath -> Int -> Strategy -> IO Bool
 classifyFile vectSpams vectHams corpus f n classifyStrat =
     do
         newMessage <- readFile f
