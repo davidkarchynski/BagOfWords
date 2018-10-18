@@ -19,23 +19,26 @@ main :: IO ()
 main =
     do
         putStrLn "Starting Bag-Of-Words Spam/Ham Classifier program..."
-        (vectSpams, vectHams, corpus) <- loadLearningData
-        () <- uiLoop vectSpams vectHams corpus
+        n <- choiceDriver nGramsSelectPrompt [] nGramsMap
+        (vectSpams, vectHams, corpus) <- loadLearningData n
+        () <- uiLoop vectSpams vectHams corpus n
         return ()
         
-uiLoop :: Matrix -> Matrix -> Corpus -> IO ()
-uiLoop vectSpams vectHams corpus =
+uiLoop :: Matrix -> Matrix -> Corpus -> Int -> IO ()
+uiLoop vectSpams vectHams corpus n =
     do
         strat <- choiceDriver stratSelectPrompt stratList stratMap
         putStrLn "Please enter the name of the text file you would like to classify."
         filePath <- getLine
-        isSpam <- classifyFile vectSpams vectHams corpus filePath 1 strat
+        isSpam <- classifyFile vectSpams vectHams corpus filePath n strat
         let response = if (isSpam) then "This is spam" else "This is ham"
         putStrLn response
         yesNoResponse <- choiceDriver continuePrompt [] yesNoMap
-        if (yesNoResponse) then uiLoop vectSpams vectHams corpus else return ()
+        if (yesNoResponse) then uiLoop vectSpams vectHams corpus n else return ()
          
-         
+nGramsSelectPrompt = "Please select a value for n (1, 2 or 3) to use for splitting the documents into n-grams?"
+nGramsMap = [("1", 1), ("2", 2), ("3", 3)]
+
 continuePrompt = "Would you like to evaluate another file? (enter y or n)"
 yesNoMap = [("y", True), ("n", False)]
 
@@ -69,8 +72,8 @@ getVal searchString (h:t) = if (searchString == fst h)
 -- loads learning data into memory
 -- processes known ham and spam messages into a corpus and matrices to be later used for determining whether
 -- a new unknown message is spam or ham
-loadLearningData :: IO (Matrix, Matrix, Corpus)
-loadLearningData =
+loadLearningData :: Int -> IO (Matrix, Matrix, Corpus)
+loadLearningData n =
     do
         file <- readFile "SMSSpamCollection"
         let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
@@ -78,8 +81,8 @@ loadLearningData =
         let spams = map (!!1) $ groupedData !! 1
         let hams = map (!!1) (head groupedData)
         
-        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spams
-        let parsedHams = map (parseGrams wordBlackList 1 dlims) hams
+        let parsedSpams = map (parseGrams wordBlackList n dlims) spams
+        let parsedHams = map (parseGrams wordBlackList n dlims) hams
         
         let corpus = createCorpus $ tfIdfFilter (parsedSpams ++ parsedHams) 2.0
 
