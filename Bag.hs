@@ -78,10 +78,10 @@ loadLearningData =
         let spams = map (!!1) $ groupedData !! 1
         let hams = map (!!1) (head groupedData)
         
-        let parsedSpams = tfIdfFilter (map (parseGrams wordBlackList 1 dlims) spams) 0.0
-        let parsedHams = tfIdfFilter (map (parseGrams wordBlackList 1 dlims) hams) 0.0
+        let parsedSpams = map (parseGrams wordBlackList 1 dlims) spams
+        let parsedHams = map (parseGrams wordBlackList 1 dlims) hams
         
-        let corpus = createCorpus $ parsedSpams ++ parsedHams
+        let corpus = createCorpus $ tfIdfFilter (parsedSpams ++ parsedHams) 2.0
 
         let vectSpams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedSpams)
         let vectHams = map (sparsifyVectSentence) (map (vectorizeSentence corpus) parsedHams)
@@ -98,7 +98,7 @@ classifyFile vectSpams vectHams corpus f n classifyStrat =
         let isSpam = classifyStrat vectSpams vectHams newMessageVect
         return isSpam
 
-dlims = "\\\"\n*;,.?!:-()[] " -- don't forget to include whitespaces        
+dlims = "\\\"\n*;,.?!:-()[] 0123456789" -- don't forget to include whitespaces        
 wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string        
 
 
