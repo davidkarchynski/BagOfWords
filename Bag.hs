@@ -36,13 +36,13 @@ uiLoop vectSpams vectHams corpus n =
         yesNoResponse <- choiceDriver continuePrompt [] yesNoMap
         if (yesNoResponse) then uiLoop vectSpams vectHams corpus n else return ()
          
-nGramsSelectPrompt = "Please select a value for n (1, 2 or 3) to use for splitting the documents into n-grams?"
+nGramsSelectPrompt = "Please select a value for n (enter 1, 2 or 3) to use for splitting the documents into n-grams."
 nGramsMap = [("1", 1), ("2", 2), ("3", 3)]
 
 continuePrompt = "Would you like to evaluate another file? (enter y or n)"
 yesNoMap = [("y", True), ("n", False)]
 
-stratSelectPrompt = "Please select a classifying strategy (enter 1 or 2)."
+stratSelectPrompt = "Please select a classifying strategy. (enter 1 or 2)"
 stratList = ["1. Naive Bayes", "2. Cosine Similarity"]
 stratMap = [("1", classifySentence), ("2", classifySentenceCosSim)]
          
@@ -76,7 +76,7 @@ loadLearningData :: Int -> IO (Matrix, Matrix, Corpus)
 loadLearningData n =
     do
         file <- readFile "SMSSpamCollection"
-        let values = file `seq` sortBy (comparing head) $ map (splitsep (=='\t')) (splitsep (=='\n') file)
+        let values = file `seq` sortBy (comparing head) $ map (splitSep (=='\t')) (splitSep (=='\n') file)
         let groupedData = groupBy (\x y -> (head x) == (head y)) values
         let spams = map (!!1) $ groupedData !! 1
         let hams = map (!!1) (head groupedData)
@@ -104,8 +104,5 @@ classifyFile vectSpams vectHams corpus f n classifyStrat =
 dlims = "\\\"\n*;,.?!:-()[] 0123456789" -- don't forget to include whitespaces        
 wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string        
 
-
-splitsep :: (a -> Bool) -> [a] -> [[a]]
-splitsep fun lst = foldr (\x (h:t) -> if fun x then []:h:t else (x:h):t) [[]] lst
 
 

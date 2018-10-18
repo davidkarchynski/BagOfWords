@@ -1,5 +1,6 @@
 module Parser 
-    (parseGrams         -- [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
+    (parseGrams,   -- [Gram] -> [[Char]] -> Int -> [Char] -> String -> Sentence
+     splitSep      -- (a -> Bool) -> [a] -> [[a]]
     ) where
 
 import Data.Char
