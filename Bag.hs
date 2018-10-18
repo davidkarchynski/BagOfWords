@@ -101,7 +101,7 @@ classifyFile vectSpams vectHams corpus f n classifyStrat =
         let isSpam = classifyStrat vectSpams vectHams newMessageVect
         return isSpam
 
-dlims = "\\\"\n*;,.?!:-()[] 0123456789" -- don't forget to include whitespaces        
+dlims = "\\\"\n*;,'./+?!:<>@-=&%#$^_()[] 0123456789" -- don't forget to include whitespaces        
 wordBlackList = ["a", "an", "the", "he", "she", "it", "they", "i", "we", "is", ""] -- include empty string        
 
 
