@@ -61,6 +61,6 @@ vectorLength v = sqrt (fromIntegral (sumOfSquares))
 -- vectorLength $ sparsifyVectSentence (4, [(0, 0), (1, 3), (2, 2), (3, 6)]) = 7.0
 
 
--- returns true if vector has a single non-zero entry
-validVector :: Vector -> Bool
-validVector v = foldlWithKeySV' (\ acc _ e -> (e /= 0) || acc) False v
+-- forces the vector to evaluate every element
+forceEvaluateVector :: Vector -> Int
+forceEvaluateVector v = foldlWithKeySV' (\ acc _ e -> e) 0 v

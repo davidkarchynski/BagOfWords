@@ -23,9 +23,8 @@ main =
         n <- choiceDriver nGramsSelectPrompt [] nGramsMap
         putStrLn "Loading and processing training data..."
         (vectSpams, vectHams, corpus) <- loadLearningData n
-        if (validVector (snd vectSpams) && validVector (snd vectHams))
-            then putStrLn "No valid training data found"
-            else putStrLn "Finished processing training data"
+        putStrLn ((forceEvaluateVector (snd vectSpams)) `seq` "finished processing part 1")
+        putStrLn ((forceEvaluateVector (snd vectHams)) `seq` "finished processing part 2")
         () <- uiLoop vectSpams vectHams corpus n
         return ()
         
